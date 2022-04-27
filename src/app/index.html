@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Test Theming Library</title>
+    <style>
+        * {
+            transition: all 0s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="root">
+        <h1 id="test-item">Test Item</h1>
+        <button onclick="doUpdate()">Update</button>
+        <script type="module">
+            import {ThemeManager} from "../lib/themeManager.ts";
+            import * as config from "./example.theme.json";
+            import * as config2 from "./example2.theme.json";
+
+            const components = ["test-item"];
+
+            const mgr = new ThemeManager();
+
+            mgr.init();
+            const resultsMap = mgr.loadTheme(components, config);
+
+            resultsMap?.forEach(item => {
+                const elem = document.getElementById(item.component);
+                if (elem && item && item.variants)
+                    elem.className = item.variants[0]?.className || ""
+            });
+
+
+            function doUpdate() {
+                const resultsMap = mgr.loadTheme(components, config2);
+
+                console.log({resultsMap});
+                
+                resultsMap?.forEach(item => {
+                    const elem = document.getElementById(item.component);
+                    if (elem && item && item.variants)
+                        elem.className = item.variants[0]?.className || ""
+                });
+            }
+
+
+            window.doUpdate = doUpdate;
+        </script>
+    </div>
+</body>
+</html>

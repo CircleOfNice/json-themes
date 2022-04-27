@@ -1,0 +1,21 @@
+{
+    "name": "Example2",
+    "basedOn": "Example",
+    "version": "1.0.0",
+    "meta": [],
+    "globals": {
+        "colors": {
+            "primary": "#1278ea"
+        },
+        "sizes": {
+            "borderRadius": "3rem"
+        }
+    },
+    "sets": {
+        "colorSets": {},
+        "fontSets": {},
+        "borderSets": {},
+        "boxSets": {}
+    },
+    "components": {}
+}

@@ -1,0 +1,76 @@
+{
+    "name": "Example",
+    "basedOn": "theme",
+    "version": "1.0.0",
+    "meta": [],
+    "globals": {
+        "colors": {
+            "primary": "#Ea3355",
+            "bg": "#e7e9eb",
+            "fg": "#030201"
+        },
+        "sizes": {
+            "l": "1rem",
+            "m": "0.5rem",
+            "s": "0.25rem",
+            "borderRadius": "0.5rem"
+        }
+    },
+    "sets": {
+        "colorSets": {
+            "base": {
+                "background": "$$colors.bg",
+                "foreground": "$$colors.fg",
+                "border": "green",
+                "transitionSpeed": "0.15s",
+                "__active": {
+                    "foreground": "blue",
+                    "transitionSpeed": "0.015s"
+                }
+            },
+            "primary": {
+                "__extends": "$$base",
+                "background": "#ccc",
+                "shadow": "$$sizes.s $$sizes.m $$sizes.l $$colors.primary",
+                "__hover": {
+                    "foreground": "$$colors.primary",
+                    "border": "currentColor"
+                },
+                "__active": {
+                    "background": "white"
+                }
+            }
+        },
+        "fontSets": {
+            "default": {
+                "family": "sans-serif"
+            }
+        },
+        "borderSets": {
+            "box": {
+                "radius": "$$sizes.borderRadius",
+                "width": "0.125rem",
+                "style": "solid",
+                "left": {
+                    "width": "1rem"
+                }
+            }
+        },
+        "boxSets": {
+            "defaultBox": {
+                "colorSet": "$$primary",
+                "borderSet": "$$box",
+                "fontSet": "$$default",
+                "padding": "1rem"
+            }
+        }
+    },
+    "components": {
+        "test-item": {
+            "default": {
+                "theming": "$$defaultBox",
+                "defaultProps": {}
+            }
+        }
+    }
+}
