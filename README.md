@@ -95,7 +95,7 @@ Of course this leads to two consequences:
 
 - A component library which should get themeable needs to include some tooling for each component to support theming with variants and defaultProps.
   - But: we have some hooks & examples here to help
-- Your app, which consumes the themeable library, may rely on some variants of a component. If you exchange a theme by another that misses some component variant definitions, the UI may break. So not all theme configurations are exchangeable by default!
+- Your app, which consumes the themeable library, may rely on some variants of a component. If you exchange a theme by another that misses some component variant definitions, the UI may break. So not all theme configurations are exchangeable out of the Box! You need to make sure that all variants your app relies on are declared inside the config.
 
 But that's not all. Nearly every block inside the config is extendable via for example `__extends: "$$basicBox`, and also a theme itself (`basedOn: "..."`). This means, as long as some themes only differ in color (black/white, ...) your second configuration can become really small. Inheritance is the key!
 
