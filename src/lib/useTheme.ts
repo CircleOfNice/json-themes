@@ -18,12 +18,12 @@ export const useThemeVariants = (component: string) => {
     return res;
 }
 
-export const useThemeVariant = (component: string, variant: string = "default") => {
+export const useThemeVariant = (component: string, variant: string | null = "default") => {
     const themeContext = useContext(ThemingContext);
     const [res, setRes] = useState<ThemingVariant | null>();
 
     useEffect(() => {
-        console.log("theming changesd", component, variant);
+        if(variant === null) return setRes(null)
 
         setRes(themeContext?.find(x => x.component === component)?.variants.find(vrnt => vrnt.variant === variant) || null);
     }, [themeContext, component, variant])

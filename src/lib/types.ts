@@ -9,7 +9,7 @@ export type ThemingDefinitionDefaultsEnum = "inherit" | "initial" | "unset";
 export type ThemingColorDefinitionDefaultsEnum = "currentColor" | "transparent";
 
 export type Extendable<T> = T & {
-    __extends?: T | ThemingReference
+    __extends?: ThemingReference
 }
 
 export type Transitionable<T> = T & {
@@ -34,16 +34,16 @@ export type ThemingGradientDefinition = {
 export type ThemingColorDefinition = ThemingDefinition | ThemingGradientDefinition | ThemingColorDefinitionDefaults;
 
 // Colors
-export type ThemingColorMap = {
+export type ThemingColorMap = Extendable<{
     background?: ThemingColorDefinition,
     border?: ThemingDefinition,
     filter?: ThemingDefinition,
     foreground?: ThemingColorDefinition,
     icon?: ThemingColorDefinition,
     shadow?: ThemingDefinition
-};
+}>;
 
-export type ThemingColorSet = ThemingSet<Extendable<ThemingColorMap>> & {
+export type ThemingColorSet = ThemingSet<ThemingColorMap> & {
     __selection?: {
         foreground: ThemingColorDefinition,
         background: ThemingColorDefinition
@@ -55,7 +55,7 @@ export type ThemingColorSets = {
 };
 
 // Fonts
-export type ThemingFontDefinition = {
+export type ThemingFontDefinition = Extendable<{
     family?: ThemingDefinition,
     letterSpacing?: ThemingNumberDefinition,
     lineHeight?: ThemingNumberDefinition,
@@ -63,9 +63,9 @@ export type ThemingFontDefinition = {
     style?: "italic" | "oblique" | "normal" | null | ThemingDefinitionDefaults,
     transform?: ThemingDefinition
     weight?: ThemingNumberDefinition
-};
+}>;
 
-export type ThemingFontSet = ThemingSet<Extendable<ThemingFontDefinition>>;
+export type ThemingFontSet = ThemingSet<ThemingFontDefinition>;
 
 export type ThemingFontSets = {
     [key: string]: ThemingFontSet
@@ -78,15 +78,15 @@ export type ThemingBorderDefinition = {
     width?: ThemingNumberDefinition
 };
 
-export type ThemingBorderMap = {
+export type ThemingBorderMap = Extendable<{
     radius?: ThemingNumberDefinition,
     bottom?: ThemingBorderDefinition,
     left?: ThemingBorderDefinition,
     right?: ThemingBorderDefinition,
     top?: ThemingBorderDefinition
-} & ThemingBorderDefinition;
+} & ThemingBorderDefinition>;
 
-export type ThemingBorderSet = ThemingSet<Extendable<ThemingBorderMap>>;
+export type ThemingBorderSet = ThemingSet<ThemingBorderMap>;
 
 export type ThemingBorderSets = {
     [key: string]: ThemingBorderSet
@@ -94,7 +94,7 @@ export type ThemingBorderSets = {
 
 
 // Boxes
-export type ThemingBoxDefinition = {
+export type ThemingBoxDefinition = Extendable<{
     animation?: "fadeIn" | "popIn" | ThemingReference,
     borderSet?: string,
     colorSet?: string,
@@ -103,10 +103,10 @@ export type ThemingBoxDefinition = {
     // margin?: ThemingDefinition,
     padding?: ThemingDefinition,
     width?: ThemingDefinition
-};
+}>;
 
 export type ThemingBoxSets = {
-    [key: string]: Extendable<ThemingBoxDefinition>
+    [key: string]: ThemingBoxDefinition
 }
 
 // General
@@ -122,18 +122,20 @@ export type ThemingConfigSets = {
     fontSets: ThemingFontSets
 };
 
-export type ThemingVariant = {
-    theming?: ThemingReference | Extendable<ThemingBoxDefinition>,
+export type ThemingVariant = Extendable<{
+    theming?: ThemingReference | ThemingBoxDefinition,
     defaultProps?: object
-};
+}>;
+
+export type ThemingComponent = Extendable<{
+    default?: ThemingVariant
+    variants?: {
+        [key: string]: ThemingVariant
+    }
+}>;
 
 export type ThemingComponents = {
-    [key: string]: {
-        default: ThemingVariant
-        variants?: {
-            [key: string]: ThemingVariant
-        }
-    }
+    [key: string]: ThemingComponent
 }
 
 export type ThemingAnimations = {
@@ -157,5 +159,5 @@ export type ThemingConfigFile = {
 export type ThemingConfig = ThemingConfigFile;
 
 export type ThemeableComponentProps<T> = {
-    variant?: string
+    variant?: string | null
 } & T;

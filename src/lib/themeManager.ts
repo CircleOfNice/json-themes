@@ -1,7 +1,8 @@
-import { Extendable, ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, Transitionable } from "./types";
+import { Extendable, ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingComponent, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, Transitionable } from "./types";
 import { css, setup } from "goober";
 import { deepmerge } from "deepmerge-ts";
 import { prefix } from 'goober/prefixer';
+import { createGlobalStyles, glob } from 'goober/global';
 
 const getVarName = (str: string) => str.slice(2);
 
@@ -9,7 +10,7 @@ const getDeepAttribute = (globals: ThemingConfig["globals"], path: string[], val
     const val = value || globals;
 
     if (!path || path.length === 0) {
-        if(typeof val === "string" && val.startsWith("$$")) {
+        if (typeof val === "string" && val.startsWith("$$")) {
             return getDeepAttribute(globals, getVarName(val).split("."));
         }
 
@@ -24,14 +25,14 @@ const resolveGlobalsVar = (str: unknown, theme: ThemingConfig, customResolver?: 
     const resolver = (varStr: string) => {
         const deep = getDeepAttribute(theme.globals, getVarName(varStr).split("."));
 
-        if(customResolver) {
-            return customResolver(deep);
-        }
-
-        if(deep === null) {
+        if (deep === null) {
             console.warn(`No Var found for ${str}. Skipped.`);
             return "";
         };
+
+        if (customResolver) {
+            return customResolver(deep);
+        }
 
         return deep?.toString() || "";
     }
@@ -41,10 +42,10 @@ const resolveGlobalsVar = (str: unknown, theme: ThemingConfig, customResolver?: 
 
 const resolveColorsDefinition = (str: unknown, theme: ThemingConfig, allowGradient = false) => {
     return resolveGlobalsVar(str, theme, res => {
-        if(allowGradient && !(typeof res === "string")) {
+        if (allowGradient && !(typeof res === "string")) {
             return resolveGlobalsVar((res as ThemingGradientDefinition).definition, theme);
         }
-        if(allowGradient && !(typeof res === "string")) {
+        if (!allowGradient && !(typeof res === "string")) {
             return resolveGlobalsVar((res as ThemingGradientDefinition).fallbackColor, theme) || "";
         }
         return `${res}`;
@@ -119,6 +120,12 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
         set.__focus && { "&:focus": resolveColorMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveColorMap(set.__focusVisible) },
         set.__disabled && { "&:disabled": resolveColorMap(set.__disabled) },
+        set.__selection && {
+            "::selection": {
+                color: resolveGlobalsVar(set.__selection.foreground, theme),
+                background: resolveColorsDefinition(set.__selection.background, theme)
+            }
+        }
     );
 
     return set.__extends ? Object.assign({},
@@ -236,66 +243,68 @@ export type ComponentsConfig = {
 const resolveComponent = (component: string, theme: ThemingConfig): ComponentsConfig => {
     const componentConfig = theme.components[component];
 
-    console.log("Resolve Component: ", {component, componentConfig, theme});
-
-    if (!componentConfig)
+    if (!componentConfig) {
         return {
             component: component,
             variants: []
         };
+    }
+
+    const extendedStuff = componentConfig.__extends ? resolveComponent(getVarName(componentConfig.__extends), theme) : {};
 
     const variants = [
-        { variant: "default", boxDef: resolveBoxDefinition(componentConfig.default.theming, theme), props: componentConfig.default.defaultProps },
+        componentConfig.default && { variant: "default", boxDef: resolveBoxDefinition(componentConfig.default?.theming, theme), props: componentConfig.default?.defaultProps },
         ...(componentConfig.variants ? Object.keys(componentConfig.variants).filter(x => x !== "default").map((vrnt, i) => componentConfig.variants && ({
             variant: vrnt,
             boxDef: resolveBoxDefinition(componentConfig.variants[vrnt].theming, theme),
             props: componentConfig.variants[vrnt].defaultProps
         })) : [])
-    ];
+    ].filter(x => x && x !== undefined && x.boxDef !== null);
 
-    return {
+    return deepmerge(extendedStuff, {
         component: component,
-        variants: variants.filter(x => x && x.boxDef !== null).map((vrnt, i) => vrnt && ({
+        variants: variants.map((vrnt, i) => vrnt && ({
             variant: vrnt.variant,
             className: vrnt.boxDef ? css(boxDefToCssProps(vrnt.boxDef, theme) as never) : "",
             defaultProps: vrnt.props || {}
         })) as ComponentsConfig["variants"]
-    };
+    });
 }
 
 export type IThemeManager = {
     readonly __loadedThemes: Array<ThemingConfig>
     readonly __lastActiveTheme: string | null
-    init: () => void
-    loadTheme: (components: string[], themeConfig: ThemingConfig) => null | ComponentsConfig[]
+    init: (componentCreationFunction: Function) => void
+    loadTheme: (components: string[], themeConfig: ThemingConfig) => {
+        components: ComponentsConfig[],
+        globalStyles: Function
+    } | null
 }
 
 export class ThemeManager implements IThemeManager {
     __loadedThemes = [];
     __lastActiveTheme: null | string = null;
 
-    init() {
-        setup(null, prefix);
+    init(componentCreationFunction: Function) {
+        setup(componentCreationFunction, prefix);
     };
 
     loadTheme(components: string[], _themeConfig: ThemingConfig) {
         if (!Array.isArray(components)) throw Error("List of components must be a string array.");
         if (!_themeConfig) throw Error("No Theming Config found!");
 
-        const themeConfig = {..._themeConfig};
+        const themeConfig = { ..._themeConfig };
 
-        !this.__loadedThemes.find((x: ThemingConfig) => x.name === themeConfig.name) && this.__loadedThemes.push({...themeConfig} as never);
+        !this.__loadedThemes.find((x: ThemingConfig) => x.name === themeConfig.name) && this.__loadedThemes.push({ ...themeConfig } as never);
 
         const resolveConfig = () => {
             const configKeys = Object.keys(themeConfig);
             const neededKeys = ["name", "components", "version", "globals", "sets"];
 
-            if(!neededKeys.every(key => configKeys.includes(key))) return null;
+            if (!neededKeys.every(key => configKeys.includes(key))) return null;
 
             if (themeConfig.basedOn) {
                 const cachedTheme = this.__loadedThemes.find((x: ThemingConfig) => x.name === themeConfig.basedOn);
-
-                console.log({cachedTheme})
 
                 if (cachedTheme) {
                     return deepmerge(cachedTheme, themeConfig);
@@ -307,7 +316,7 @@ export class ThemeManager implements IThemeManager {
 
         const resolvedConfig = resolveConfig();
 
-        if(resolvedConfig === null) return null;
+        if (resolvedConfig === null) return null;
 
         if (this.__lastActiveTheme !== resolvedConfig.name) {
             this.__lastActiveTheme = resolvedConfig.name;
@@ -317,7 +326,12 @@ export class ThemeManager implements IThemeManager {
                 styleRoot.remove();
             }
 
-            return components.map(comp => resolveComponent(comp, resolvedConfig));
+            const GlobalStyles = createGlobalStyles`html,body {}`;
+
+            return {
+                components: components.map(comp => resolveComponent(comp, resolvedConfig)),
+                globalStyles: GlobalStyles
+            };
         }
 
         return null;
