@@ -27,7 +27,7 @@ type ThemingSet<T> = {
 export type ThemingDefinitionDefaults = ThemingDefinitionDefaultsEnum;
 export type ThemingColorDefinitionDefaults = ThemingDefinitionDefaultsEnum | ThemingColorDefinitionDefaultsEnum;
 export type ThemingGradientDefinition = {
-    definition: string,
+    definition: ThemingDefinition,
     fallbackColor: ThemingDefinition
 };
 
@@ -36,14 +36,19 @@ export type ThemingColorDefinition = ThemingDefinition | ThemingGradientDefiniti
 // Colors
 export type ThemingColorMap = {
     background?: ThemingColorDefinition,
-    border?: ThemingColorDefinition,
+    border?: ThemingDefinition,
     filter?: ThemingDefinition,
     foreground?: ThemingColorDefinition,
     icon?: ThemingColorDefinition,
-    shadow?: ThemingColorDefinition
+    shadow?: ThemingDefinition
 };
 
-export type ThemingColorSet = ThemingSet<Extendable<ThemingColorMap>>;
+export type ThemingColorSet = ThemingSet<Extendable<ThemingColorMap>> & {
+    __selection?: {
+        foreground: ThemingColorDefinition,
+        background: ThemingColorDefinition
+    }
+};
 
 export type ThemingColorSets = {
     [key: string]: ThemingColorSet

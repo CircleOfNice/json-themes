@@ -1,23 +1,54 @@
-import { Extendable, ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingConfig, ThemingFontDefinition, ThemingFontSet, Transitionable } from "./types";
+import { Extendable, ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, Transitionable } from "./types";
 import { css, setup } from "goober";
 import { deepmerge } from "deepmerge-ts";
 import { prefix } from 'goober/prefixer';
 
 const getVarName = (str: string) => str.slice(2);
 
-const getDeepAttribute = (obj: any, path: string[]): string | number | null => {
-    if (!path || path.length === 0) return obj;
-    if (!obj[path[0]]) return null;
+const getDeepAttribute = (globals: ThemingConfig["globals"], path: string[], value: any = null): string | number | null => {
+    const val = value || globals;
 
-    return getDeepAttribute(obj[path[0]], path.slice(1));
+    if (!path || path.length === 0) {
+        if(typeof val === "string" && val.startsWith("$$")) {
+            return getDeepAttribute(globals, getVarName(val).split("."));
+        }
+
+        return val
+    };
+    if (!val[path[0]]) return null;
+
+    return getDeepAttribute(globals, path.slice(1), val[path[0]]);
 }
 
-const resolveGlobalsVar = (str: unknown, theme: ThemingConfig) => {
+const resolveGlobalsVar = (str: unknown, theme: ThemingConfig, customResolver?: (res: unknown) => string) => {
     const resolver = (varStr: string) => {
-        return getDeepAttribute(theme.globals, getVarName(varStr).split("."))?.toString() || "";
+        const deep = getDeepAttribute(theme.globals, getVarName(varStr).split("."));
+
+        if(customResolver) {
+            return customResolver(deep);
+        }
+
+        if(deep === null) {
+            console.warn(`No Var found for ${str}. Skipped.`);
+            return "";
+        };
+
+        return deep?.toString() || "";
     }
 
     return (`${str}`.replace(/\$\$[\w.]*/gm, resolver));
+}
+
+const resolveColorsDefinition = (str: unknown, theme: ThemingConfig, allowGradient = false) => {
+    return resolveGlobalsVar(str, theme, res => {
+        if(allowGradient && !(typeof res === "string")) {
+            return resolveGlobalsVar((res as ThemingGradientDefinition).definition, theme);
+        }
+        if(allowGradient && !(typeof res === "string")) {
+            return resolveGlobalsVar((res as ThemingGradientDefinition).fallbackColor, theme) || "";
+        }
+        return `${res}`;
+    })
 }
 
 const borderSetToCss = (borderSet: ThemingBorderSet | string, theme: ThemingConfig): object => {
@@ -72,10 +103,10 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
     const resolveColorMap = (cmp: Transitionable<ThemingColorMap>) => {
         return Object.assign({},
             cmp.transitionSpeed && { transitionDuration: resolveGlobalsVar(cmp.transitionSpeed, theme) },
-            cmp.background && { background: resolveGlobalsVar(cmp.background, theme) },
-            cmp.border && { borderColor: resolveGlobalsVar(cmp.border, theme) },
+            cmp.background && { background: resolveColorsDefinition(cmp.background, theme, true) },
+            cmp.border && { borderColor: resolveColorsDefinition(cmp.border, theme) },
             cmp.filter && { filter: resolveGlobalsVar(cmp.filter, theme) },
-            cmp.foreground && { color: resolveGlobalsVar(cmp.foreground, theme) },
+            cmp.foreground && { color: resolveColorsDefinition(cmp.foreground, theme) },
             cmp.icon && { "& svg": { color: resolveGlobalsVar(cmp.icon, theme) } },
             cmp.shadow && { boxShadow: resolveGlobalsVar(cmp.shadow, theme) }
         )
