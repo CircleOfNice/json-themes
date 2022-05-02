@@ -40,3 +40,8 @@ rebuild: clean install build
 
 publish:
 	npm run pub
+
+update:
+	npm i -g npm-check-updates
+	ncu -u -t minor
+	@+make -s install
