@@ -18,10 +18,16 @@ YEAR:=$(shell date "+%Y")
 #
 WORKING_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-all: install
+all: install build test
 
 build:
 	npm run build
+
+dist: build
+	@echo "dist"
+
+develop:
+	@echo "This library doesn't support a live development mode. Use 'build' to create installable binaries."
 
 test: 
 	npm run lint
@@ -42,6 +48,6 @@ publish:
 	npm run pub
 
 update:
-	npm i -g npm-check-updates
+	npm list npm-check-updates -g || npm i npm-check-updates -g
 	ncu -u -t minor
 	@+make -s install

@@ -1,3 +1,5 @@
+*status: WIP // May 2022*
+
 ```
       _  _____  ____  _   _   _______ _    _ ______ __  __ ______  _____ 
      | |/ ____|/ __ \| \ | | |__   __| |  | |  ____|  \/  |  ____|/ ____|
@@ -9,6 +11,13 @@
 ```
 
 # JSON-THEMES
+
+- [JSON-THEMES](#json-themes)
+  - [Motivation](#motivation)
+  - [Concept](#concept)
+  - [Use the library](#use-the-library)
+  - [Future plans](#future-plans)
+  - [Contribution](#contribution)
  
 ## Motivation
 
@@ -98,4 +107,70 @@ Of course this leads to two consequences:
 - Your app, which consumes the themeable library, may rely on some variants of a component. If you exchange a theme by another that misses some component variant definitions, the UI may break. So not all theme configurations are exchangeable out of the Box! You need to make sure that all variants your app relies on are declared inside the config.
 
 But that's not all. Nearly every block inside the config is extendable via for example `__extends: "$$basicBox`, and also a theme itself (`basedOn: "..."`). This means, as long as some themes only differ in color (black/white, ...) your second configuration can become really small. Inheritance is the key!
+
+## Use the library
+
+The library is designed to work in an environment looking like this:
+
+- You have your own Component Library which should support heavy-duty theming
+- Your library is based on React (with hooks)
+
+Of course this also works for apps with a lot of atomic / molecular components as well.
+
+Inside your component-library you then can just install `json-themes` via
+
+```
+npm install json-themes
+```
+
+While the library is designed to support runtime-exchangeable theme configs stored in JSON, it's recommended to have at least one theme specified as `export const ...` inside a typescript / javascript file - because here you will get full developer experience with all the options strongly typed - and it's there from the beginning, just to avoid style-flickering.
+
+1. Somewhere in a `<Root>` Component or similar you now should wrap around the `<ThemingRoot />` component, which will provide a React Context where the theming is accessible through. Pass the `componentsList` and `themingConfig` props to load a theme into the context.
+
+2. Now you will have to touch each component to make it support themes. The Hook `useThemingVariant("MyComponent", "myVariant")` can be used to resolve a theming name to a corresponding `className`. Your Component's main Node should get this className. The component itself should get the `defaultProps`, maybe with some plausability checking.
+
+```tsx
+
+export const Button = (props) => {
+    const variant = useThemingVariant("Button", props.variant || "default");
+
+    return (
+        <button {...variant?.defaultProps} className={`my-button ${variant.className}`}>
+            {props.children}
+        </button>
+    );
+}
+
+```
+
+3. Inside you're App's code you now will get a feeling of how many variants of a component you'll need. Typically you'll need a few button variants `[callToAction, default, menu, newsletter, ...]`, and for most of the other components only a default variant. Make sure that every theme you'll create has all the necessary variants, your App relies on.
+
+4. You can compose dark/light themes either inside one theming config (with variants) or with a second (inherited) theming config. 
+   1. The variants option has the advantage, that the dark/light switch will happen "in place", without style flickering
+   2. The 2nd theme config option has the advantage, that you usually only have to replace the `globals.colors` section with new values. All custom variants are inherited by default. This way recommended.
+
+
+## Future plans
+
+The library is still in an early phase of development. There may come critical renamings or changes of behavior soon.
+Yet there are some plans of what the library will get & be in the future:
+
+- Full automated testing
+- Bulletproof config import checks
+- Support for other frameworks than React
+- More flexible output & control over the CSS generation
+- In-place CSS replacement (currently it replaces a whole `<style>` Tag)
+- Helpers to support import/export/edit configs inside the browser
+- Additions to specify and visualize **Styleguides**
+- Helpers to support loading fonts & basic assets (like a Logo)
+
+There are also some things which this library won't be:
+
+- A component library
+- ... with base Configs (You'll defenitely need to create them from scratch)
+- A layout / page builder / CMS / ... config system
+
+## Contribution
+
+The library is still in an early phase of development. In case you just happened to stumble across it and think it sounds interesting, feel free to try it out or get in contact with us. If you need assistance to integrate this approach into your library, we may be able to help! ;)
 

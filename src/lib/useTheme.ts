@@ -25,7 +25,7 @@ export const useThemeVariant = (component: string, variant: string | null = "def
     useEffect(() => {
         if(variant === null) return setRes(null)
 
-        setRes(themeContext?.find(x => x.component === component)?.variants.find(vrnt => vrnt.variant === variant) || null);
+        return setRes(themeContext?.find(x => x.component === component)?.variants.find(vrnt => vrnt.variant === variant) || null);
     }, [themeContext, component, variant])
 
     return res;
