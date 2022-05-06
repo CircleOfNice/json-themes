@@ -85,11 +85,13 @@ The basic structure divides the config into several parts. Most important:
 {
     "default": {
         "theming": "$$basicBox",
+        "parts": { "option": "$$callToActionBoxDef" },
         "defaultProps": {}
     },
     "variants": {
         "callToAction": {
             "theming": "...",
+            "parts": { "option": "$$callToActionBoxDef" },
             "defaultProps": {...}
         }
     }
@@ -97,6 +99,8 @@ The basic structure divides the config into several parts. Most important:
 ```
   
 The `components` part is where the real magic will happen. You can freely choose in all of your declared stylings or parts of it to compose the appearance of a component. Just not only once, but with variants! You now have the possibility to have multiple versions of the same component, just by theming! No need to declare all possible variants in your code (as long as they only differ in design). 
+
+There are also `parts` to declare Stying for parts of your component. Imagine a molecular Component (like a ComboBox) which consists of multiple styleable parts. You may want to stay in control over all of them.
 
 Additionally you can declare "defaultProps" which can be mapped to a component's defaultProps. Think of a textfield which has an inline button to delete its value. One customer want's a trashcan symbol, the other one an "X". That's now controllable only via this theming configuration, as long as your Component makes that controllable via its props.
 
@@ -148,6 +152,8 @@ export const Button = (props) => {
 4. You can compose dark/light themes either inside one theming config (with variants) or with a second (inherited) theming config. 
    1. The variants option has the advantage, that the dark/light switch will happen "in place", without style flickering
    2. The 2nd theme config option has the advantage, that you usually only have to replace the `globals.colors` section with new values. All custom variants are inherited by default. This way recommended.
+
+5. A component Definition
 
 
 ## Future plans

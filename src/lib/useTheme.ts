@@ -4,6 +4,9 @@ import { ThemingContext } from "./themeContext"
 type ThemingVariant = {
     className: string,
     defaultProps: object,
+    parts?: {
+        [key: string]: string
+    }
     variant: string
 }
 

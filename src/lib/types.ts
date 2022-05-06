@@ -1,5 +1,5 @@
 
-type ThemingReference = `$$${string}`
+export type ThemingReference = `$$${string}`
 type ThemingDefinition = string | ThemingReference | null;
 type ThemingNumberDefinition = ThemingDefinition | number;
 type ThemingImageDefintion = ThemingDefinition;
@@ -124,6 +124,7 @@ export type ThemingConfigSets = {
 
 export type ThemingVariant = Extendable<{
     theming?: ThemingReference | ThemingBoxDefinition,
+    parts?: { [key:string]: ThemingReference | ThemingBoxDefinition }
     defaultProps?: object
 }>;
 
