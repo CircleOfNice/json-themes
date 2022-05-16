@@ -6,6 +6,18 @@ import { createGlobalStyles, glob } from 'goober/global';
 
 const getVarName = (str: string) => str.slice(2);
 
+const sortCssNestings = (a: [string, unknown], b: any) => {
+    // custom sorting for some properties (e.g. to enable active rule > hover rule)
+    if (a[0] === "&:hover") return -1;
+    if (a[0]?.includes("&:focus,&focus-within")) return 0;
+    if (a[0] === "&:focus-visible") return 0;
+    if (a[0] === "&:focus-within") return 0;
+    if (a[0] === "&:active") return 1;
+    if (a[0] === "&:disabled") return 2;
+
+    return a[0].toString() > b[0].toString() ? 1 : -1;
+}
+
 const getDeepAttribute = (globals: ThemingConfig["globals"], path: string[], value: any = null): string | number | null => {
     const val = value || globals;
 
@@ -38,6 +50,28 @@ const resolveGlobalsVar = (str: unknown, theme: ThemingConfig, customResolver?: 
     }
 
     return (`${str}`.replace(/\$\$[\w.]*/gm, resolver));
+}
+
+const resolvePropsVars = (props: any, theme: ThemingConfig) => {
+    if(!props || !theme) return null;
+
+    const keys = Object.keys(props);
+
+    const resolvedValues: Array<any> = keys?.map(key => {
+        const value = props[key];
+
+        if(typeof value === "string" && value.startsWith("$$")) {
+            return resolveGlobalsVar(value, theme);
+        }
+
+        if(typeof value === "object") {
+            return resolvePropsVars(value, theme);
+        }
+
+        return value;
+    });
+
+    return Object.fromEntries(keys.map((key, i) => ([key, resolvedValues[i]]))) 
 }
 
 const resolveColorsDefinition = (str: unknown, theme: ThemingConfig, allowGradient = false) => {
@@ -81,18 +115,16 @@ const borderSetToCss = (borderSet: ThemingBorderSet | string, theme: ThemingConf
         resolveMap(set),
         set.__hover && { "&:hover": resolveMap(set.__hover) },
         set.__active && { "&:active": resolveMap(set.__active) },
-        set.__focus && { "&:focus": resolveMap(set.__focus) },
+        set.__focus && { "&:focus,&focus-within": resolveMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveMap(set.__focusVisible) },
         set.__disabled && { "&:disabled": resolveMap(set.__disabled) },
     );
 
     return set.__extends ? Object.assign({},
-        ...Object.entries(deepmerge(borderSetToCss(set.__extends, theme), resolvedSet)).sort((a, b) => {
-            // custom sorting for some properties (e.g. to enable active rule > hover rule)
-            if (a[0] === "&:hover") return -1;
-
-            return a[0].toString() > b[0].toString() ? 1 : -1;
-        }).map(([k, v]) => ({ [k]: v })))
+        ...Object.entries(deepmerge(
+            borderSetToCss(set.__extends, theme), resolvedSet))
+            .sort(sortCssNestings)
+            .map(([k, v]) => ({ [k]: v })))
         : resolvedSet;
 }
 
@@ -117,7 +149,7 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
         resolveColorMap(set),
         set.__hover && { "&:hover": resolveColorMap(set.__hover) },
         set.__active && { "&:active": resolveColorMap(set.__active) },
-        set.__focus && { "&:focus": resolveColorMap(set.__focus) },
+        set.__focus && { "&:focus,&:focus-within": resolveColorMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveColorMap(set.__focusVisible) },
         set.__disabled && { "&:disabled": resolveColorMap(set.__disabled) },
         set.__selection && {
@@ -129,12 +161,10 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
     );
 
     return set.__extends ? Object.assign({},
-        ...Object.entries(deepmerge(colorSetToCss(set.__extends, theme), resolvedSet)).sort((a, b) => {
-            // custom sorting for some properties (e.g. to enable active rule > hover rule)
-            if (a[0] === "&:hover") return -1;
-
-            return a[0].toString() > b[0].toString() ? 1 : -1;
-        }).map(([k, v]) => ({ [k]: v })))
+        ...Object.entries(deepmerge(
+            colorSetToCss(set.__extends, theme), resolvedSet))
+            .sort(sortCssNestings)
+            .map(([k, v]) => ({ [k]: v })))
         : resolvedSet;
 }
 
@@ -160,18 +190,16 @@ const fontSetToCss = (colorSet: ThemingFontSet | string, theme: ThemingConfig): 
         resolveFontMap(set),
         set.__hover && { "&:hover": resolveFontMap(set.__hover) },
         set.__active && { "&:active": resolveFontMap(set.__active) },
-        set.__focus && { "&:focus": resolveFontMap(set.__focus) },
+        set.__focus && { "&:focus,&focus-within": resolveFontMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveFontMap(set.__focusVisible) },
         set.__disabled && { "&:disabled": resolveFontMap(set.__disabled) },
     );
 
     return set.__extends ? Object.assign({},
-        ...Object.entries(deepmerge(fontSetToCss(set.__extends, theme), resolvedSet)).sort((a, b) => {
-            // custom sorting for some properties (e.g. to enable active rule > hover rule)
-            if (a[0] === "&:hover") return -1;
-
-            return a[0].toString() > b[0].toString() ? 1 : -1;
-        }).map(([k, v]) => ({ [k]: v })))
+        ...Object.entries(deepmerge(
+            fontSetToCss(set.__extends, theme), resolvedSet))
+            .sort(sortCssNestings)
+            .map(([k, v]) => ({ [k]: v })))
         : resolvedSet;
 }
 
@@ -266,7 +294,7 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
         variants: variants.map((vrnt, i) => vrnt && ({
             variant: vrnt.variant,
             className: vrnt.boxDef ? css(boxDefToCssProps(vrnt.boxDef, theme) as never) : "",
-            defaultProps: vrnt.props || {}
+            defaultProps: resolvePropsVars(vrnt.props, theme) || {}
         })) as ComponentsConfig["variants"]
     });
 }
