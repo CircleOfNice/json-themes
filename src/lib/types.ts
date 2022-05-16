@@ -124,6 +124,7 @@ export type ThemingConfigSets = {
 
 export type ThemingVariant = Extendable<{
     theming?: ThemingReference | ThemingBoxDefinition,
+    parts?: { [key: string]: ThemingReference | ThemingBoxDefinition}
     defaultProps?: object
 }>;
 
