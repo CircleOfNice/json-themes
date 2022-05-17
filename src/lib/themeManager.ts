@@ -1,4 +1,4 @@
-import { Extendable, ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingComponent, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, ThemingReference, Transitionable } from "./types";
+import { ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingComponent, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, Transitionable } from "./types";
 import { css, setup } from "goober";
 import { deepmerge } from "deepmerge-ts";
 import { prefix } from 'goober/prefixer';
@@ -97,7 +97,9 @@ const borderSetToCss = (borderSet: ThemingBorderSet | string, theme: ThemingConf
     );
 
     return set.__extends ? Object.assign({},
-        ...Object.entries(deepmerge(borderSetToCss(set.__extends, theme), resolvedSet)).sort(sortCssNestings).map(([k, v]) => ({ [k]: v })))
+        ...Object.entries(deepmerge(borderSetToCss(set.__extends, theme), resolvedSet))
+            .sort(sortCssNestings)
+            .map(([k, v]) => ({ [k]: v })))
         : resolvedSet;
 }
 
@@ -134,7 +136,9 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
     );
 
     return set.__extends ? Object.assign({},
-        ...Object.entries(deepmerge(colorSetToCss(set.__extends, theme), resolvedSet)).sort(sortCssNestings).map(([k, v]) => ({ [k]: v })))
+        ...Object.entries(deepmerge(colorSetToCss(set.__extends, theme), resolvedSet))
+            .sort(sortCssNestings)
+            .map(([k, v]) => ({ [k]: v })))
         : resolvedSet;
 }
 
@@ -166,7 +170,9 @@ const fontSetToCss = (colorSet: ThemingFontSet | string, theme: ThemingConfig): 
     );
 
     return set.__extends ? Object.assign({},
-        ...Object.entries(deepmerge(fontSetToCss(set.__extends, theme), resolvedSet)).sort(sortCssNestings).map(([k, v]) => ({ [k]: v })))
+        ...Object.entries(deepmerge(fontSetToCss(set.__extends, theme), resolvedSet))
+            .sort(sortCssNestings)
+            .map(([k, v]) => ({ [k]: v })))
         : resolvedSet;
 }
 
@@ -231,7 +237,7 @@ const resolveBoxDefinition = (def: string | ThemingBoxDefinition | undefined, th
 
             const otherSource = getDeepAttribute(theme.components, context.split("."), null);
 
-            if(otherSource[getVarName(def)]) return otherSource[getVarName(def)];
+            if (otherSource[getVarName(def)]) return otherSource[getVarName(def)];
 
             return null;
         }
