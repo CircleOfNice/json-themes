@@ -53,25 +53,25 @@ const resolveGlobalsVar = (str: unknown, theme: ThemingConfig, customResolver?: 
 }
 
 const resolvePropsVars = (props: any, theme: ThemingConfig) => {
-    if(!props || !theme) return null;
+    if (!props || !theme) return null;
 
     const keys = Object.keys(props);
 
     const resolvedValues: Array<any> = keys?.map(key => {
         const value = props[key];
 
-        if(typeof value === "string" && value.startsWith("$$")) {
+        if (typeof value === "string" && value.startsWith("$$")) {
             return resolveGlobalsVar(value, theme);
         }
 
-        if(typeof value === "object") {
+        if (typeof value === "object") {
             return resolvePropsVars(value, theme);
         }
 
         return value;
     });
 
-    return Object.fromEntries(keys.map((key, i) => ([key, resolvedValues[i]]))) 
+    return Object.fromEntries(keys.map((key, i) => ([key, resolvedValues[i]])))
 }
 
 const resolveColorsDefinition = (str: unknown, theme: ThemingConfig, allowGradient = false) => {
@@ -135,6 +135,7 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
 
     const resolveColorMap = (cmp: Transitionable<ThemingColorMap>) => {
         return Object.assign({},
+            // TODO cmp.__extends && 
             cmp.transitionSpeed && { transitionDuration: resolveGlobalsVar(cmp.transitionSpeed, theme) },
             cmp.background && { background: resolveColorsDefinition(cmp.background, theme, true) },
             cmp.border && { borderColor: resolveColorsDefinition(cmp.border, theme) },

@@ -5,7 +5,6 @@ import { ThemingConfig } from "./types";
 export const ThemingContext = React.createContext<null | ComponentsConfig[]>(null);
 
 export const ThemingRoot = (props: PropsWithChildren<{
-    componentsList: string[],
     themingConfig: ThemingConfig,
     suppressTransitionsTimeout?: number
 }>) => {
@@ -26,8 +25,8 @@ export const ThemingRoot = (props: PropsWithChildren<{
     }, []);
 
     useEffect(() => {
-        if (manager && props.themingConfig && props.componentsList?.length > 0) {
-            const result = manager.loadTheme(props.componentsList, props.themingConfig);
+        if (manager && props.themingConfig && components) {
+            const result = manager.loadTheme(components, props.themingConfig);
 
             setSuppressTransitions(true);
 
@@ -36,9 +35,9 @@ export const ThemingRoot = (props: PropsWithChildren<{
     }, [components, manager, props.themingConfig]);
 
     useEffect(() => {
-        if (props.componentsList)
-            setComponents(props.componentsList)
-    }, [props.componentsList]);
+        if (props.themingConfig)
+            setComponents(Object.keys(props.themingConfig.components))
+    }, [props.themingConfig]);
 
     useEffect(() => {
         if (suppressTransitions) {
