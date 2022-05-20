@@ -20,13 +20,13 @@ WORKING_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 all: install build test
 
-build:
+build: install
 	npm run build
 
 dist: build
 	@echo "dist"
 
-develop:
+develop: install
 	@echo "This library doesn't support a live development mode. Use 'build' to create installable binaries."
 
 test: 
