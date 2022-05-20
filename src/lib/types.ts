@@ -1,5 +1,5 @@
 
-type ThemingReference = `$$${string}`
+export type ThemingReference = `$$${string}`
 type ThemingDefinition = string | ThemingReference | null;
 type ThemingNumberDefinition = ThemingDefinition | number;
 type ThemingImageDefintion = ThemingDefinition;

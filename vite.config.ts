@@ -6,12 +6,11 @@ import react from "@vitejs/plugin-react";
 // https://vitejs.dev/config/
 export default defineConfig({
 	plugins: [react()],
-	css: {},
 	build: {
-		minify: false,
+		minify: true,
 		sourcemap: true,
 		cssCodeSplit: false,
-		emptyOutDir: false,
+		emptyOutDir: true,
 		outDir: path.resolve(__dirname, "dist"),
 		lib: {
 			entry: path.resolve(__dirname, "src/lib/index.ts"),
@@ -26,11 +25,15 @@ export default defineConfig({
 				globals: {
 					react: "React",
 					"react-dom": "ReactDOM"
-				}
+				},
+				sourcemap: true,
+				sourcemapExcludeSources: true,
+				compact: true
 			}
 		},
 		commonjsOptions: {
-			transformMixedEsModules: true
+			transformMixedEsModules: true,
+			sourceMap: false
 		}
 	}
 });

@@ -1,0 +1,8 @@
+"wsl make".exe --dry-run --always-make --keep-going --print-directory
+"\\wsl.localhost\Ubuntu\home\cmx\dev\crcl\json-themes"
+CMD.EXE wurde mit dem oben angegebenen Pfad als aktuellem Verzeichnis gestartet.
+UNC-Pfade werden nicht unterst�tzt.
+Stattdessen wird das Windows-Verzeichnis als aktuelles Verzeichnis gesetzt.
+
+/bin/bash: make.exe: command not found
+

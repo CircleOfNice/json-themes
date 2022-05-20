@@ -1,10 +1,8 @@
-import { Extendable, ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingComponent, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, Transitionable } from "./types";
+import { ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingComponent, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, Transitionable } from "./types";
 import { css, setup } from "goober";
 import { deepmerge } from "deepmerge-ts";
 import { prefix } from 'goober/prefixer';
 import { createGlobalStyles, glob } from 'goober/global';
-
-const getVarName = (str: string) => str.slice(2);
 
 const sortCssNestings = (a: [string, unknown], b: any) => {
     // custom sorting for some properties (e.g. to enable active rule > hover rule)
@@ -18,19 +16,21 @@ const sortCssNestings = (a: [string, unknown], b: any) => {
     return a[0].toString() > b[0].toString() ? 1 : -1;
 }
 
-const getDeepAttribute = (globals: ThemingConfig["globals"], path: string[], value: any = null): string | number | null => {
-    const val = value || globals;
+const getVarName = (str: string) => str.slice(2);
+
+const getDeepAttribute = (root: Record<string, any>, path: string[], value: any = null): any => {
+    const val = value || root;
 
     if (!path || path.length === 0) {
         if (typeof val === "string" && val.startsWith("$$")) {
-            return getDeepAttribute(globals, getVarName(val).split("."));
+            return getDeepAttribute(root, getVarName(val).split("."));
         }
 
         return val
     };
     if (!val[path[0]]) return null;
 
-    return getDeepAttribute(globals, path.slice(1), val[path[0]]);
+    return getDeepAttribute(root, path.slice(1), val[path[0]]);
 }
 
 const resolveGlobalsVar = (str: unknown, theme: ThemingConfig, customResolver?: (res: unknown) => string) => {
@@ -203,13 +203,13 @@ const fontSetToCss = (colorSet: ThemingFontSet | string, theme: ThemingConfig): 
         : resolvedSet;
 }
 
-const boxDefToCssProps = (boxDef: Extendable<ThemingBoxDefinition> | null, theme: ThemingConfig): Array<object> => {
+const boxDefToCssProps = (boxDef: ThemingBoxDefinition | null, theme: ThemingConfig, context?: string): Array<object> => {
     const res = [];
 
     if (!boxDef) return [];
 
     if (boxDef.__extends) {
-        res.push(...boxDefToCssProps(resolveBoxDefinition(boxDef.__extends, theme), theme));
+        res.push(...boxDefToCssProps(resolveBoxDefinition(boxDef.__extends, theme, context), theme));
     }
 
     if (boxDef.animation) {
@@ -251,8 +251,26 @@ const boxDefToCssProps = (boxDef: Extendable<ThemingBoxDefinition> | null, theme
     return res;
 }
 
-const resolveBoxDefinition = (def: string | ThemingBoxDefinition | undefined, theme: ThemingConfig): ThemingBoxDefinition | null => {
-    if (typeof def === "string" && def.startsWith("$$")) return theme.sets.boxSets[getVarName(def)] || null;
+const resolveBoxDefinition = (def: string | ThemingBoxDefinition | undefined, theme: ThemingConfig, context?: string): ThemingBoxDefinition | null => {
+    if (!def) return null;
+
+    if (typeof def === "string" && def.startsWith("$$")) {
+        const guess = theme.sets.boxSets[getVarName(def)] || null;
+
+        if (guess) return guess;
+
+        if (context) {
+            console.log(def, context);
+
+            const otherSource = getDeepAttribute(theme.components, context.split("."), null);
+
+            if (otherSource[getVarName(def)]) return otherSource[getVarName(def)];
+
+            return null;
+        }
+
+        return null;
+    };
 
     if (typeof def === "object") return def;
 
@@ -264,7 +282,10 @@ export type ComponentsConfig = {
     variants: {
         variant: string;
         className: string;
-        defaultProps: object
+        defaultProps: object;
+        parts: {
+            [key: string]: string
+        }
     }[]
 }
 
@@ -281,18 +302,34 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
     const extendedStuff = componentConfig.__extends ? resolveComponent(getVarName(componentConfig.__extends), theme) : {};
 
     const variants = [
-        componentConfig.default && { variant: "default", boxDef: resolveBoxDefinition(componentConfig.default?.theming, theme), props: componentConfig.default?.defaultProps },
+        componentConfig.default && {
+            variant: "default",
+            parts: componentConfig.default.parts ? Object.keys(componentConfig.default.parts as object).map((key) => ([key,
+                componentConfig.default &&
+                resolveBoxDefinition((componentConfig.default.parts as any)[key], theme)
+            ])) : [],
+            boxDef: resolveBoxDefinition(componentConfig.default?.theming, theme),
+            props: componentConfig.default?.defaultProps
+        },
         ...(componentConfig.variants ? Object.keys(componentConfig.variants).filter(x => x !== "default").map((vrnt, i) => componentConfig.variants && ({
             variant: vrnt,
+            parts: componentConfig.variants[vrnt].parts ? Object.keys(componentConfig.variants[vrnt].parts as object).map((key) => ([key,
+                componentConfig.variants &&
+                resolveBoxDefinition((componentConfig.variants[vrnt].parts as any)[key], theme)
+            ])) : [],
             boxDef: resolveBoxDefinition(componentConfig.variants[vrnt].theming, theme),
             props: componentConfig.variants[vrnt].defaultProps
         })) : [])
     ].filter(x => x && x !== undefined && x.boxDef !== null);
 
+    console.log({ variants });
+
     return deepmerge(extendedStuff, {
         component: component,
         variants: variants.map((vrnt, i) => vrnt && ({
             variant: vrnt.variant,
+            parts: Object.fromEntries(vrnt.parts.map((part: any) => ([part[0], css(boxDefToCssProps(part[1], theme,
+                `${component}.${vrnt.variant === "default" ? "default.parts" : `variants.${vrnt.variant}.parts`}`) as never) || ""]))),
             className: vrnt.boxDef ? css(boxDefToCssProps(vrnt.boxDef, theme) as never) : "",
             defaultProps: resolvePropsVars(vrnt.props, theme) || {}
         })) as ComponentsConfig["variants"]
