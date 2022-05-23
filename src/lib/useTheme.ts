@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useMemo, useState } from "react"
 import { ThemingContext } from "./themeContext"
 
 type ThemingVariant<T = object> = {
@@ -24,22 +24,27 @@ export const useThemeVariants = (component: string) => {
 export const useThemeVariant = <T>(component: string, variant: string | null = "default", props: T): [ThemingVariant<T> | null, T] => {
     const themeContext = useContext(ThemingContext);
     const [themingVariant, setThemingVariant] = useState<ThemingVariant<T> | null>();
-    const [resolvedProps, setResolvedProps] = useState(props);
+    const resolvedProps = useMemo<T>( () => {
+            if (themingVariant) {
+                const defprps: any = {...themingVariant.defaultProps};
+
+                if(defprps["children"] && !(typeof defprps["children"] === "string")) {
+                    delete defprps.children;
+                };
+
+                return Object.assign(defprps, props);
+            }
+            return props;
+        },
+        [themingVariant, props]
+    );
 
     useEffect(() => {
-        if(variant === null) return setThemingVariant(null)
+        if (!themeContext) return;
+        if (variant === null) return setThemingVariant(null)
 
         return setThemingVariant(themeContext?.find(x => x.component === component)?.variants.find(vrnt => vrnt.variant === variant) as unknown as ThemingVariant<T> || null);
     }, [themeContext, component, variant]);
-
-    useEffect(() => {
-        if(themingVariant) {
-            setResolvedProps({
-                ...themingVariant.defaultProps,
-                ...props
-            });
-        }
-    }, [themingVariant]);
 
     return [themingVariant || null, resolvedProps];
 }

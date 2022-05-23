@@ -357,8 +357,6 @@ export class ThemeManager implements IThemeManager {
 
         const themeConfig = { ..._themeConfig };
 
-        console.log({themeConfig});
-
         !this.__loadedThemes.find((x: ThemingConfig) => x.name === themeConfig.name) && this.__loadedThemes.push({ ...themeConfig } as never);
 
         const resolveConfig = () => {
