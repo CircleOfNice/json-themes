@@ -25,7 +25,7 @@ export const ThemingRoot = (props: PropsWithChildren<{
     }, []);
 
     useEffect(() => {
-        if (manager && props.themingConfig && components) {
+        if (manager && props.themingConfig && components && components.length > 0) {
             const result = manager.loadTheme(components, props.themingConfig);
 
             setSuppressTransitions(true);

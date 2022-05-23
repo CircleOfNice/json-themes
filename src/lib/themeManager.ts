@@ -261,8 +261,6 @@ const resolveBoxDefinition = (def: string | ThemingBoxDefinition | undefined, th
         if (guess) return guess;
 
         if (context) {
-            console.log(def, context);
-
             const otherSource = getDeepAttribute(theme.components, context.split("."), null);
 
             if (otherSource[getVarName(def)]) return otherSource[getVarName(def)];
@@ -323,8 +321,6 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
         })) : [])
     ].filter(x => x && x !== undefined && x.boxDef !== null);
 
-    console.log({ variants });
-
     return deepmerge(extendedStuff, {
         component: component,
         variants: variants.map((vrnt, i) => vrnt && ({
@@ -361,13 +357,15 @@ export class ThemeManager implements IThemeManager {
 
         const themeConfig = { ..._themeConfig };
 
+        console.log({themeConfig});
+
         !this.__loadedThemes.find((x: ThemingConfig) => x.name === themeConfig.name) && this.__loadedThemes.push({ ...themeConfig } as never);
 
         const resolveConfig = () => {
             const configKeys = Object.keys(themeConfig);
             const neededKeys = ["name", "components", "version", "globals", "sets"];
 
-            if (!neededKeys.every(key => configKeys.includes(key))) return null;
+            if (!neededKeys.every(key => configKeys.includes(key))) throw Error(`Falsy Configuration: Please check your Config schema for ${themeConfig.name || "config"}`);
 
             if (themeConfig.basedOn) {
                 const cachedTheme = this.__loadedThemes.find((x: ThemingConfig) => x.name === themeConfig.basedOn);
