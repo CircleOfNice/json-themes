@@ -23,7 +23,9 @@ export const useThemeVariants = (component: string) => {
 
 export const useThemeVariant = <T>(component: string, variant: string | null = "default", props: T): [ThemingVariant<T> | null, T] => {
     const themeContext = useContext(ThemingContext);
-    const [themingVariant, setThemingVariant] = useState<ThemingVariant<T> | null>();
+    const calcThemingVariant = () => themeContext?.find(x => x.component === component)?.variants.find(vrnt => vrnt.variant === variant) as unknown as ThemingVariant<T> || null;
+
+    const [themingVariant, setThemingVariant] = useState<ThemingVariant<T> | null>(calcThemingVariant());
     const resolvedProps = useMemo<T>( () => {
             if (themingVariant) {
                 const defprps: any = {...themingVariant.defaultProps};
@@ -43,7 +45,7 @@ export const useThemeVariant = <T>(component: string, variant: string | null = "
         if (!themeContext) return;
         if (variant === null) return setThemingVariant(null)
 
-        return setThemingVariant(themeContext?.find(x => x.component === component)?.variants.find(vrnt => vrnt.variant === variant) as unknown as ThemingVariant<T> || null);
+        return setThemingVariant(calcThemingVariant);
     }, [themeContext, component, variant]);
 
     return [themingVariant || null, resolvedProps];
