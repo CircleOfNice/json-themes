@@ -23,9 +23,9 @@ export const useThemeVariants = (component: string) => {
 
 export const useThemeVariant = <T>(component: string, variant: string | null = "default", props: T): [ThemingVariant<T> | null, T] => {
     const themeContext = useContext(ThemingContext);
-    const calcThemingVariant = () => themeContext?.find(x => x.component === component)?.variants.find(vrnt => vrnt.variant === variant) as unknown as ThemingVariant<T> || null;
+    const calcThemingVariant = (_variant: string | null) => themeContext?.find(x => x.component === component)?.variants.find(vrnt => vrnt.variant === _variant) as unknown as ThemingVariant<T> || null;
 
-    const [themingVariant, setThemingVariant] = useState<ThemingVariant<T> | null>(calcThemingVariant());
+    const [themingVariant, setThemingVariant] = useState<ThemingVariant<T> | null>(calcThemingVariant(variant));
     const resolvedProps = useMemo<T>( () => {
             if (themingVariant) {
                 const defprps: any = {...themingVariant.defaultProps};
@@ -45,7 +45,12 @@ export const useThemeVariant = <T>(component: string, variant: string | null = "
         if (!themeContext) return;
         if (variant === null) return setThemingVariant(null)
 
-        return setThemingVariant(calcThemingVariant);
+        const vrnt = calcThemingVariant(variant);
+
+        if (vrnt === null) return console.warn(`No corresponding theme variant "${variant}" found for ${component}.`)
+        if(vrnt.className === themingVariant?.className && vrnt.variant === themingVariant.variant) return;
+
+        return setThemingVariant(vrnt);
     }, [themeContext, component, variant]);
 
     return [themingVariant || null, resolvedProps];
