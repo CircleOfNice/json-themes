@@ -131,12 +131,12 @@ While the library is designed to support runtime-exchangeable theme configs stor
 
 1. Somewhere in a `<Root>` Component or similar you now should wrap around the `<ThemingRoot />` component, which will provide a React Context where the theming is accessible through. Pass the `componentsList` and `themingConfig` props to load a theme into the context.
 
-2. Now you will have to touch each component to make it support themes. The Hook `useThemingVariant("MyComponent", "myVariant")` can be used to resolve a theming name to a corresponding `className`. Your Component's main Node should get this className. The component itself should get the `defaultProps`, maybe with some plausability checking.
+2. Now you will have to touch each component to make it support themes. The Hook `useThemingVariant("MyComponent", "myVariant", props)` can be used to resolve a theming name to a corresponding `className` and mixed props + defaultProps. Your Component's main Node should get this className. The component itself should get the `defaultProps`, maybe with some plausability checking.
 
 ```tsx
 
-export const Button = (props) => {
-    const variant = useThemingVariant("Button", props.variant || "default");
+export const Button = (_props) => {
+    const [variant, props] = useThemingVariant("Button", _props.variant || "default");
 
     return (
         <button {...variant?.defaultProps} className={`my-button ${variant.className}`}>

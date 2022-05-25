@@ -28,11 +28,13 @@ export const ThemingRoot = (props: PropsWithChildren<{
         if (manager && props.themingConfig && components && components.length > 0) {
             const result = manager.loadTheme(components, props.themingConfig);
 
+            console.log({ result });
+
             setSuppressTransitions(true);
 
             setTheme(result);
         }
-    }, [components, manager, props.themingConfig]);
+    }, [manager, props.themingConfig]);
 
     useEffect(() => {
         if (props.themingConfig)

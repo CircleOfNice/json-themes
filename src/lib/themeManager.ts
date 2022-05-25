@@ -335,7 +335,11 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
 
 export type IThemeManager = {
     readonly __loadedThemes: Array<ThemingConfig>
-    readonly __lastActiveTheme: string | null
+    readonly __lastActiveTheme: {
+        name: string,
+        components: ComponentsConfig[],
+        globalStyles: Function
+    } | null
     init: (componentCreationFunction: Function) => void
     loadTheme: (components: string[], themeConfig: ThemingConfig) => {
         components: ComponentsConfig[],
@@ -345,7 +349,11 @@ export type IThemeManager = {
 
 export class ThemeManager implements IThemeManager {
     __loadedThemes = [];
-    __lastActiveTheme: null | string = null;
+    __lastActiveTheme: null | {
+        name: string,
+        components: ComponentsConfig[],
+        globalStyles: Function
+    } = null;
 
     init(componentCreationFunction: Function) {
         setup(componentCreationFunction, prefix);
@@ -380,9 +388,7 @@ export class ThemeManager implements IThemeManager {
 
         if (resolvedConfig === null) return null;
 
-        if (this.__lastActiveTheme !== resolvedConfig.name) {
-            this.__lastActiveTheme = resolvedConfig.name;
-
+        if (this.__lastActiveTheme?.name !== resolvedConfig.name) {
             const styleRoot = (document || window.document).getElementById("_goober");
             if (styleRoot) {
                 styleRoot.remove();
@@ -390,10 +396,21 @@ export class ThemeManager implements IThemeManager {
 
             const GlobalStyles = createGlobalStyles`html,body {}`;
 
-            return {
+            const res = {
                 components: components.map(comp => resolveComponent(comp, resolvedConfig)),
                 globalStyles: GlobalStyles
             };
+
+            this.__lastActiveTheme = {
+                name: resolvedConfig.name,
+                ...res
+            }
+
+            return res;
+        }
+
+        if(this.__lastActiveTheme.name === resolvedConfig.name) {
+            return this.__lastActiveTheme;
         }
 
         return null;
