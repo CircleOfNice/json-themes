@@ -117,7 +117,12 @@ const borderSetToCss = (borderSet: ThemingBorderSet | string, theme: ThemingConf
         set.__active && { "&:active": resolveMap(set.__active) },
         set.__focus && { "&:focus,&focus-within": resolveMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveMap(set.__focusVisible) },
-        set.__disabled && { "&:disabled": resolveMap(set.__disabled) },
+        set.__disabled && {
+            "&:disabled,&[aria-disabled=true]": {
+                ...resolveMap(set.__disabled),
+                "pointer-events": "none"
+            }
+        },
     );
 
     return set.__extends ? Object.assign({},
@@ -152,7 +157,12 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
         set.__active && { "&:active": resolveColorMap(set.__active) },
         set.__focus && { "&:focus,&:focus-within": resolveColorMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveColorMap(set.__focusVisible) },
-        set.__disabled && { "&:disabled": resolveColorMap(set.__disabled) },
+        set.__disabled && {
+            "&:disabled,&[aria-disabled=true]": {
+                ...resolveColorMap(set.__disabled),
+                "pointer-events": "none"
+            }
+        },
         set.__selection && {
             "::selection": {
                 color: resolveGlobalsVar(set.__selection.foreground, theme),
@@ -193,7 +203,12 @@ const fontSetToCss = (colorSet: ThemingFontSet | string, theme: ThemingConfig): 
         set.__active && { "&:active": resolveFontMap(set.__active) },
         set.__focus && { "&:focus,&focus-within": resolveFontMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveFontMap(set.__focusVisible) },
-        set.__disabled && { "&:disabled": resolveFontMap(set.__disabled) },
+        set.__disabled && {
+            "&:disabled,&[aria-disabled=true]": {
+                ...resolveFontMap(set.__disabled),
+                "pointer-events": "none"
+            }
+        },
     );
 
     return set.__extends ? Object.assign({},
@@ -341,7 +356,7 @@ export type IThemeManager = {
         globalStyles: Function
     } | null
     init: (componentCreationFunction: Function) => void
-    loadTheme: (components: string[], themeConfig: ThemingConfig) => {
+    loadTheme: (themeConfig: ThemingConfig, pool?: ThemingConfig[]) => {
         components: ComponentsConfig[],
         globalStyles: Function
     } | null
@@ -359,8 +374,7 @@ export class ThemeManager implements IThemeManager {
         setup(componentCreationFunction, prefix);
     };
 
-    loadTheme(components: string[], _themeConfig: ThemingConfig) {
-        if (!Array.isArray(components)) throw Error("List of components must be a string array.");
+    loadTheme(_themeConfig: ThemingConfig, pool?: ThemingConfig[]) {
         if (!_themeConfig) throw Error("No Theming Config found!");
 
         const themeConfig = { ..._themeConfig };
@@ -374,11 +388,25 @@ export class ThemeManager implements IThemeManager {
             if (!neededKeys.every(key => configKeys.includes(key))) throw Error(`Falsy Configuration: Please check your Config schema for ${themeConfig.name || "config"}`);
 
             if (themeConfig.basedOn) {
-                const cachedTheme = this.__loadedThemes.find((x: ThemingConfig) => x.name === themeConfig.basedOn);
+                const resolveBasedOn = (conf: ThemingConfig): ThemingConfig => {
+                    if(!conf.basedOn || conf.basedOn === "") return conf;
 
-                if (cachedTheme) {
-                    return deepmerge(cachedTheme, themeConfig);
+                    const cachedTheme = this.__loadedThemes.find((x: ThemingConfig) => x.name === conf.basedOn);
+
+                    if (cachedTheme) {
+                        return deepmerge(resolveBasedOn(cachedTheme), conf);
+                    }
+
+                    if(pool) {
+                        const res = pool.find((x: ThemingConfig) => x.name === conf.basedOn);
+
+                        if(res) return deepmerge(resolveBasedOn(res), conf);
+                    }
+
+                    return conf;
                 }
+
+                return resolveBasedOn(themeConfig);
             }
 
             return themeConfig;
@@ -387,6 +415,8 @@ export class ThemeManager implements IThemeManager {
         const resolvedConfig = resolveConfig();
 
         if (resolvedConfig === null) return null;
+
+        const components = Object.keys(resolvedConfig.components);
 
         if (this.__lastActiveTheme?.name !== resolvedConfig.name) {
             const styleRoot = (document || window.document).getElementById("_goober");
@@ -409,7 +439,7 @@ export class ThemeManager implements IThemeManager {
             return res;
         }
 
-        if(this.__lastActiveTheme.name === resolvedConfig.name) {
+        if (this.__lastActiveTheme.name === resolvedConfig.name) {
             return this.__lastActiveTheme;
         }
 

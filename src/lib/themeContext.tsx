@@ -4,12 +4,12 @@ import { ThemingConfig } from "./types";
 
 export const ThemingContext = React.createContext<null | ComponentsConfig[]>(null);
 
-export const ThemingRoot = (props: PropsWithChildren<{
+export const ThemingProvider = (props: PropsWithChildren<{
     themingConfig: ThemingConfig,
+    pool?: ThemingConfig[],
     suppressTransitionsTimeout?: number
 }>) => {
     const [manager, setManager] = useState<IThemeManager>();
-    const [components, setComponents] = useState<string[]>([]);
     const [theme, setTheme] = useState<{
         components: ComponentsConfig[];
         globalStyles: Function;
@@ -25,8 +25,12 @@ export const ThemingRoot = (props: PropsWithChildren<{
     }, []);
 
     useEffect(() => {
-        if (manager && props.themingConfig && components && components.length > 0) {
-            const result = manager.loadTheme(components, props.themingConfig);
+        if (!props.themingConfig) {
+            throw new Error("No Theming Config provided");
+        } 
+
+        if (manager && props.themingConfig) {
+            const result = manager.loadTheme(props.themingConfig, props.pool);
 
             console.log({ result });
 
@@ -35,11 +39,6 @@ export const ThemingRoot = (props: PropsWithChildren<{
             setTheme(result);
         }
     }, [manager, props.themingConfig]);
-
-    useEffect(() => {
-        if (props.themingConfig)
-            setComponents(Object.keys(props.themingConfig.components))
-    }, [props.themingConfig]);
 
     useEffect(() => {
         if (suppressTransitions) {
