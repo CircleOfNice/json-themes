@@ -38,6 +38,7 @@ export type ThemingColorMap = Extendable<{
     background?: ThemingColorDefinition,
     border?: ThemingDefinition,
     filter?: ThemingDefinition,
+    backdropFilter?: ThemingDefinition,
     foreground?: ThemingColorDefinition,
     icon?: ThemingColorDefinition,
     shadow?: ThemingDefinition

@@ -1,4 +1,4 @@
-import React, { FC, PropsWithChildren, useEffect, useState } from "react";
+import React, { PropsWithChildren, useEffect, useState } from "react";
 import { ComponentsConfig, IThemeManager, ThemeManager } from "./themeManager";
 import { ThemingConfig } from "./types";
 
@@ -9,57 +9,57 @@ export const ThemingProvider = (props: PropsWithChildren<{
     pool?: ThemingConfig[],
     suppressTransitionsTimeout?: number
 }>) => {
-    const [manager, setManager] = useState<IThemeManager>();
-    const [theme, setTheme] = useState<{
-        components: ComponentsConfig[];
-        globalStyles: Function;
+	const [manager, setManager] = useState<IThemeManager>();
+	const [theme, setTheme] = useState<{
+        components: ComponentsConfig[]
+        globalStyles: Function  // eslint-disable-line @typescript-eslint/ban-types
     } | null>(null);
-    const [suppressTransitions, setSuppressTransitions] = useState(false);
+	const [suppressTransitions, setSuppressTransitions] = useState(false);
 
-    useEffect(() => {
-        const mgr = new ThemeManager();
+	useEffect(() => {
+		const mgr = new ThemeManager();
 
-        mgr.init(React.createElement);
+		mgr.init(React.createElement);
 
-        setManager(mgr)
-    }, []);
+		setManager(mgr);
+	}, []);
 
-    useEffect(() => {
-        if (!props.themingConfig) {
-            throw new Error("No Theming Config provided");
-        } 
+	useEffect(() => {
+		if (!props.themingConfig) {
+			throw new Error("No Theming Config provided");
+		} 
 
-        if (manager && props.themingConfig) {
-            const result = manager.loadTheme(props.themingConfig, props.pool);
+		if (manager && props.themingConfig) {
+			const result = manager.loadTheme(props.themingConfig, props.pool);
 
-            console.log({ result });
+			console.log({ result });
 
-            setSuppressTransitions(true);
+			setSuppressTransitions(true);
 
-            setTheme(result);
-        }
-    }, [manager, props.themingConfig]);
+			setTheme(result);
+		}
+	}, [manager, props.themingConfig]);
 
-    useEffect(() => {
-        if (suppressTransitions) {
-            const stls = document.createElement("style");
-            stls.innerHTML = "html,body * { transition-duration: 0s !important; }";
-            stls.id = "__suppressTransitionsDecl";
+	useEffect(() => {
+		if (suppressTransitions) {
+			const stls = document.createElement("style");
+			stls.innerHTML = "html,body * { transition-duration: 0s !important; }";
+			stls.id = "__suppressTransitionsDecl";
 
-            document.head.appendChild(stls);
+			document.head.appendChild(stls);
 
-            const timer = setTimeout(() => setSuppressTransitions(false), props.suppressTransitionsTimeout || 333);
+			const timer = setTimeout(() => setSuppressTransitions(false), props.suppressTransitionsTimeout || 333);
 
-            return () => clearTimeout(timer);
-        }
-        else {
-            document.getElementById("__suppressTransitionsDecl")?.remove();
-        }
-    }, [suppressTransitions]);
+			return () => clearTimeout(timer);
+		}
+		else {
+			document.getElementById("__suppressTransitionsDecl")?.remove();
+		}
+	}, [suppressTransitions]);
 
-    return <>
-        <ThemingContext.Provider value={theme?.components || null}>
-            {props.children}
-        </ThemingContext.Provider>
-    </>
-}
+	return <>
+		<ThemingContext.Provider value={theme?.components || null}>
+			{props.children}
+		</ThemingContext.Provider>
+	</>;
+};
