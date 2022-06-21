@@ -9,57 +9,59 @@ export const ThemingProvider = (props: PropsWithChildren<{
     pool?: ThemingConfig[],
     suppressTransitionsTimeout?: number
 }>) => {
-	const [manager, setManager] = useState<IThemeManager>();
-	const [theme, setTheme] = useState<{
+    const [manager, setManager] = useState<IThemeManager>();
+    const [theme, setTheme] = useState<{
         components: ComponentsConfig[]
-        globalStyles: Function  // eslint-disable-line @typescript-eslint/ban-types
+        globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
     } | null>(null);
-	const [suppressTransitions, setSuppressTransitions] = useState(false);
+    const [suppressTransitions, setSuppressTransitions] = useState(false);
 
-	useEffect(() => {
-		const mgr = new ThemeManager();
+    useEffect(() => {
+        const mgr = new ThemeManager();
 
-		mgr.init(React.createElement);
+        mgr.init(React.createElement);
 
-		setManager(mgr);
-	}, []);
+        setManager(mgr);
+    }, []);
 
-	useEffect(() => {
-		if (!props.themingConfig) {
-			throw new Error("No Theming Config provided");
-		} 
+    useEffect(() => {
+        if(!props.themingConfig)
+            throw new Error("No Theming Config provided");
 
-		if (manager && props.themingConfig) {
-			const result = manager.loadTheme(props.themingConfig, props.pool);
 
-			console.log({ result });
+        if(manager && props.themingConfig) {
+            const result = manager.loadTheme(props.themingConfig, props.pool);
 
-			setSuppressTransitions(true);
+            console.log({ result });
 
-			setTheme(result);
-		}
-	}, [manager, props.themingConfig]);
+            setSuppressTransitions(true);
 
-	useEffect(() => {
-		if (suppressTransitions) {
-			const stls = document.createElement("style");
-			stls.innerHTML = "html,body * { transition-duration: 0s !important; }";
-			stls.id = "__suppressTransitionsDecl";
+            setTheme(result);
+        }
+    }, [manager, props.themingConfig]);
 
-			document.head.appendChild(stls);
+    useEffect(() => {
+        if(suppressTransitions) {
+            const stls = document.createElement("style");
 
-			const timer = setTimeout(() => setSuppressTransitions(false), props.suppressTransitionsTimeout || 333);
+            stls.innerHTML = "html,body * { transition-duration: 0s !important; }";
+            stls.id = "__suppressTransitionsDecl";
 
-			return () => clearTimeout(timer);
-		}
-		else {
-			document.getElementById("__suppressTransitionsDecl")?.remove();
-		}
-	}, [suppressTransitions]);
+            document.head.appendChild(stls);
 
-	return <>
-		<ThemingContext.Provider value={theme?.components || null}>
-			{props.children}
-		</ThemingContext.Provider>
-	</>;
+            const timer = setTimeout(() => setSuppressTransitions(false), props.suppressTransitionsTimeout || 333);
+
+            return () => clearTimeout(timer);
+        }
+
+        document.getElementById("__suppressTransitionsDecl")?.remove();
+
+        return () => {};
+    }, [suppressTransitions]);
+
+    return <>
+        <ThemingContext.Provider value={theme?.components || null}>
+            {props.children}
+        </ThemingContext.Provider>
+    </>;
 };
