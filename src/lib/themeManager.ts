@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, Transitionable } from "./types";
+import { ThemingBackdropFilterDefinition, ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, Transitionable } from "./types";
 import { css, setup } from "goober";
 import { deepmerge } from "deepmerge-ts";
 import { prefix } from "goober/prefixer";
@@ -120,6 +120,23 @@ const resolveColorsDefinition = (str: unknown, theme: ThemingConfig, allowGradie
 };
 
 /**
+ * Function to either resolve a color or a gradient defintion
+ * @returns a valid CSS color/gradient def
+ */
+// eslint-disable-next-line @typescript-eslint/ban-types
+const resolveBackdropFilterDefinition = (obj: ThemingBackdropFilterDefinition | string, theme: ThemingConfig): Object => {
+    if(typeof obj === "string" && obj.startsWith("$$"))
+        return resolveBackdropFilterDefinition(resolveGlobalsVar(obj, theme), theme);
+
+    return {
+        "backdropFilter":                             resolveGlobalsVar((obj as ThemingBackdropFilterDefinition).definition, theme),
+        "@supports not (backdrop-filter: blur(1px))": {
+            background: resolveGlobalsVar((obj as ThemingBackdropFilterDefinition).fallbackBackground, theme)
+        }
+    };
+};
+
+/**
  * theming border set defintion to CSS
  */
 const borderSetToCss = (borderSet: ThemingBorderSet | string, theme: ThemingConfig): object => {
@@ -184,7 +201,7 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
             cmp.background && { background: resolveColorsDefinition(cmp.background, theme, true) },
             cmp.border && { borderColor: resolveColorsDefinition(cmp.border, theme) },
             cmp.filter && { filter: resolveGlobalsVar(cmp.filter, theme) },
-            cmp.backdropFilter && { backdropFilter: resolveGlobalsVar(cmp.backdropFilter, theme) },
+            cmp.backdropFilter && resolveBackdropFilterDefinition(cmp.backdropFilter, theme),
             cmp.foreground && { color: resolveColorsDefinition(cmp.foreground, theme) },
             cmp.icon && { "& svg": { color: resolveGlobalsVar(cmp.icon, theme) } },
             cmp.shadow && { boxShadow: resolveGlobalsVar(cmp.shadow, theme) }
