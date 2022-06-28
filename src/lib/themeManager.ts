@@ -40,7 +40,6 @@ const getDeepAttribute = (root: Record<string, any>, path: string[], value: any 
         if(typeof val === "string" && val.startsWith("$$"))
             return getDeepAttribute(root, getVarName(val).split("."));
 
-
         return val;
     }
 
@@ -50,29 +49,35 @@ const getDeepAttribute = (root: Record<string, any>, path: string[], value: any 
 };
 
 /**
- * Resolve a global variable definition of theming config
+ * Resolve global Variables
+ * @param varStr $$var String
+ * @param theme the theming config
+ * @param customResolver custom resolver function in case you don't want to return a .toString()
+ * @returns a resolved variable
+ */
+const resolveGlobalsVar = (varStr: string, theme: ThemingConfig, customResolver?: (res: unknown) => any) => {
+    const deep = getDeepAttribute(theme.globals, getVarName(varStr).split("."));
+
+    if(deep === null) {
+        console.warn(`No Var found for ${varStr}. Skipped.`);
+        return "";
+    }
+
+    if(customResolver)
+        return customResolver(deep);
+
+    return deep?.toString() || "";
+};
+
+/**
+ * Resolve a global variable definition string of theming config
  * @param value the value that can be a value or a variable
  * @param theme theming config
  * @param customResolver optional custom resolver, for example to resolve gradient definitions which are not pure CSS
  * @returns {string} either the value or the resolved value from a variable
  */
-const resolveGlobalsVar = (value: unknown, theme: ThemingConfig, customResolver?: (res: unknown) => string) => {
-    const resolver = (varStr: string) => {
-        const deep = getDeepAttribute(theme.globals, getVarName(varStr).split("."));
-
-        if(deep === null) {
-            console.warn(`No Var found for ${value}. Skipped.`);
-            return "";
-        }
-
-        if(customResolver)
-            return customResolver(deep);
-
-
-        return deep?.toString() || "";
-    };
-
-    return (`${value}`.replace(/\$\$[\w.]*/gm, resolver));
+const resolveGlobalsVarString = (value: unknown, theme: ThemingConfig, customResolver?: (res: unknown) => any) => {
+    return (`${value}`.replace(/\$\$[\w.]*/gm, str => resolveGlobalsVar(str, theme, customResolver)));
 };
 
 /**
@@ -90,7 +95,7 @@ const resolvePropsVars = (props: any, theme: ThemingConfig) => {
         const value = props[key];
 
         if(typeof value === "string" && value.startsWith("$$"))
-            return resolveGlobalsVar(value, theme);
+            return resolveGlobalsVarString(value, theme);
 
 
         if(typeof value === "object")
@@ -108,12 +113,12 @@ const resolvePropsVars = (props: any, theme: ThemingConfig) => {
  * @returns a valid CSS color/gradient def
  */
 const resolveColorsDefinition = (str: unknown, theme: ThemingConfig, allowGradient = false) => {
-    return resolveGlobalsVar(str, theme, res => {
+    return resolveGlobalsVarString(str, theme, res => {
         if(allowGradient && !(typeof res === "string"))
-            return resolveGlobalsVar((res as ThemingGradientDefinition).definition, theme);
+            return resolveGlobalsVarString((res as ThemingGradientDefinition).definition, theme);
 
         if(!allowGradient && !(typeof res === "string"))
-            return resolveGlobalsVar((res as ThemingGradientDefinition).fallbackColor, theme) || "";
+            return resolveGlobalsVarString((res as ThemingGradientDefinition).fallbackColor, theme) || "";
 
         return `${res}`;
     });
@@ -126,12 +131,12 @@ const resolveColorsDefinition = (str: unknown, theme: ThemingConfig, allowGradie
 // eslint-disable-next-line @typescript-eslint/ban-types
 const resolveBackdropFilterDefinition = (obj: ThemingBackdropFilterDefinition | string, theme: ThemingConfig): Object => {
     if(typeof obj === "string" && obj.startsWith("$$"))
-        return resolveBackdropFilterDefinition(resolveGlobalsVar(obj, theme), theme);
+        return resolveBackdropFilterDefinition(resolveGlobalsVar(obj, theme, (resolvedObject => resolvedObject)), theme);
 
     return {
-        "backdropFilter":                             resolveGlobalsVar((obj as ThemingBackdropFilterDefinition).definition, theme),
+        "backdropFilter":                             resolveGlobalsVarString((obj as ThemingBackdropFilterDefinition).definition, theme),
         "@supports not (backdrop-filter: blur(1px))": {
-            background: resolveGlobalsVar((obj as ThemingBackdropFilterDefinition).fallbackBackground, theme)
+            background: resolveGlobalsVarString((obj as ThemingBackdropFilterDefinition).fallbackBackground, theme)
         }
     };
 };
@@ -146,21 +151,21 @@ const borderSetToCss = (borderSet: ThemingBorderSet | string, theme: ThemingConf
 
     const resolveDefinition = (tdef: ThemingBorderDefinition, context: string) => {
         return Object.assign({},
-            tdef.image && { [`border${context}-image`]: resolveGlobalsVar(tdef.image, theme) },
-            tdef.style && { [`border${context}-style`]: resolveGlobalsVar(tdef.style, theme) },
-            tdef.width && { [`border${context}-width`]: resolveGlobalsVar(tdef.width, theme) }
+            tdef.image && { [`border${context}-image`]: resolveGlobalsVarString(tdef.image, theme) },
+            tdef.style && { [`border${context}-style`]: resolveGlobalsVarString(tdef.style, theme) },
+            tdef.width && { [`border${context}-width`]: resolveGlobalsVarString(tdef.width, theme) }
         );
     };
 
     const resolveMap = (bmp: Transitionable<ThemingBorderMap>) => {
         return Object.assign({},
             resolveDefinition(bmp, ""),
-            bmp.transitionSpeed && { transitionDuration: resolveGlobalsVar(bmp.transitionSpeed, theme) },
+            bmp.transitionSpeed && { transitionDuration: resolveGlobalsVarString(bmp.transitionSpeed, theme) },
             bmp.bottom && resolveDefinition(bmp.bottom, "-bottom"),
             bmp.left && resolveDefinition(bmp.left, "-left"),
             bmp.right && resolveDefinition(bmp.right, "-right"),
             bmp.top && resolveDefinition(bmp.top, "-top"),
-            bmp.radius && { "border-radius": resolveGlobalsVar(bmp.radius, theme) }
+            bmp.radius && { "border-radius": resolveGlobalsVarString(bmp.radius, theme) }
         );
     };
 
@@ -197,14 +202,14 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
     const resolveColorMap = (cmp: Transitionable<ThemingColorMap>) => {
         return Object.assign({},
             // TODO cmp.__extends &&
-            cmp.transitionSpeed && { transitionDuration: resolveGlobalsVar(cmp.transitionSpeed, theme) },
+            cmp.transitionSpeed && { transitionDuration: resolveGlobalsVarString(cmp.transitionSpeed, theme) },
             cmp.background && { background: resolveColorsDefinition(cmp.background, theme, true) },
             cmp.border && { borderColor: resolveColorsDefinition(cmp.border, theme) },
-            cmp.filter && { filter: resolveGlobalsVar(cmp.filter, theme) },
+            cmp.filter && { filter: resolveGlobalsVarString(cmp.filter, theme) },
             cmp.backdropFilter && resolveBackdropFilterDefinition(cmp.backdropFilter, theme),
             cmp.foreground && { color: resolveColorsDefinition(cmp.foreground, theme) },
-            cmp.icon && { "& svg": { color: resolveGlobalsVar(cmp.icon, theme) } },
-            cmp.shadow && { boxShadow: resolveGlobalsVar(cmp.shadow, theme) }
+            cmp.icon && { "& svg": { color: resolveGlobalsVarString(cmp.icon, theme) } },
+            cmp.shadow && { boxShadow: resolveGlobalsVarString(cmp.shadow, theme) }
         );
     };
 
@@ -222,7 +227,7 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
         },
         set.__selection && {
             "::selection": {
-                color:      resolveGlobalsVar(set.__selection.foreground, theme),
+                color:      resolveGlobalsVarString(set.__selection.foreground, theme),
                 background: resolveColorsDefinition(set.__selection.background, theme)
             }
         }
@@ -246,14 +251,14 @@ const fontSetToCss = (colorSet: ThemingFontSet | string, theme: ThemingConfig): 
 
     const resolveFontMap = (fmp: Transitionable<ThemingFontDefinition>) => {
         return Object.assign({},
-            fmp.transitionSpeed && { transitionDuration: resolveGlobalsVar(fmp.transitionSpeed, theme) },
-            fmp.family && { "font-family": resolveGlobalsVar(fmp.family, theme) },
-            fmp.letterSpacing && { "letter-spacing": resolveGlobalsVar(fmp.letterSpacing, theme) },
-            fmp.lineHeight && { lineHeight: resolveGlobalsVar(fmp.lineHeight, theme) },
-            fmp.size && { fontSize: resolveGlobalsVar(fmp.size, theme) },
-            fmp.style && { fontStyle: resolveGlobalsVar(fmp.style, theme) },
-            fmp.weight && { fontWeight: resolveGlobalsVar(fmp.weight, theme) },
-            fmp.transform && { textTransform: resolveGlobalsVar(fmp.transform, theme) }
+            fmp.transitionSpeed && { transitionDuration: resolveGlobalsVarString(fmp.transitionSpeed, theme) },
+            fmp.family && { "font-family": resolveGlobalsVarString(fmp.family, theme) },
+            fmp.letterSpacing && { "letter-spacing": resolveGlobalsVarString(fmp.letterSpacing, theme) },
+            fmp.lineHeight && { lineHeight: resolveGlobalsVarString(fmp.lineHeight, theme) },
+            fmp.size && { fontSize: resolveGlobalsVarString(fmp.size, theme) },
+            fmp.style && { fontStyle: resolveGlobalsVarString(fmp.style, theme) },
+            fmp.weight && { fontWeight: resolveGlobalsVarString(fmp.weight, theme) },
+            fmp.transform && { textTransform: resolveGlobalsVarString(fmp.transform, theme) }
         );
     };
 
@@ -323,7 +328,7 @@ const boxDefToCssProps = (boxDef: ThemingBoxDefinition | null, theme: ThemingCon
 
     if(boxDef.animation)
         res.push({
-            animation: resolveGlobalsVar(boxDef.animation, theme)
+            animation: resolveGlobalsVarString(boxDef.animation, theme)
         });
 
 
@@ -337,7 +342,7 @@ const boxDefToCssProps = (boxDef: ThemingBoxDefinition | null, theme: ThemingCon
 
     if(boxDef.padding)
         res.push({
-            padding: resolveGlobalsVar(boxDef.padding, theme)
+            padding: resolveGlobalsVarString(boxDef.padding, theme)
         });
 
 
@@ -347,13 +352,13 @@ const boxDefToCssProps = (boxDef: ThemingBoxDefinition | null, theme: ThemingCon
 
     if(boxDef.height)
         res.push({
-            height: resolveGlobalsVar(boxDef.height, theme)
+            height: resolveGlobalsVarString(boxDef.height, theme)
         });
 
 
     if(boxDef.width)
         res.push({
-            width: resolveGlobalsVar(boxDef.width, theme)
+            width: resolveGlobalsVarString(boxDef.width, theme)
         });
 
 

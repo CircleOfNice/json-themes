@@ -35,14 +35,14 @@ export type ThemingColorDefinition = ThemingDefinition | ThemingGradientDefiniti
 export type ThemingBackdropFilterDefinition = {
     definition: ThemingDefinition,
     fallbackBackground: ThemingColorDefinition
-}
+};
 
 // Colors
 export type ThemingColorMap = Extendable<{
     background?: ThemingColorDefinition,
     border?: ThemingDefinition,
     filter?: ThemingDefinition,
-    backdropFilter?: ThemingBackdropFilterDefinition,
+    backdropFilter?: ThemingBackdropFilterDefinition | ThemingReference,
     foreground?: ThemingColorDefinition,
     icon?: ThemingColorDefinition,
     shadow?: ThemingDefinition
