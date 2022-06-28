@@ -16,6 +16,7 @@
   - [Motivation](#motivation)
   - [Concept](#concept)
   - [Use the library](#use-the-library)
+  - [Special Cases}(#special-cases)
   - [Future plans](#future-plans)
   - [Contribution](#contribution)
  
@@ -155,6 +156,38 @@ export const Button = (_props) => {
 
 5. A component Definition
 
+## Special Cases
+
+### backdropFilter support
+
+The library supports specification of backdrop filters. Since they're not yet supported in all major browsers they're covered by a special definition format. Inside your theming config you can use them like following:
+
+```json
+{
+      "backdropFilter": {
+            "definition": "blur(2px) contrast(0.5)",
+            "fallbackBackground": "rgba(55,55,55,0.67)"
+      }
+}
+```
+
+Internally this will result in usage of the CSS `@supports` to either provide the backdropFilter definition or the fallbackBackground. You still can make use of the normal `background` definition if you want to, but be aware that the fallbackBackground may overwrite it.
+
+### gradients
+
+You can define gradients for background color definitions. Foreground (text) is currently not supported because of weak browser support and bad performance.
+The format does look like this:
+
+```json
+{
+      "background": {
+            "definition": "linear-gradient(#fff, #000)",
+            "fallbackColor": "#888"
+      }
+}
+```
+
+In case you set one of those objects on foreground or other color definitions that are not background, it will fall back to the fallbackColor.
 
 ## Future plans
 
