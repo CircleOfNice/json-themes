@@ -16,7 +16,9 @@
   - [Motivation](#motivation)
   - [Concept](#concept)
   - [Use the library](#use-the-library)
-  - [Special Cases}(#special-cases)
+  - [Special Cases](#special-cases)
+    - [backdropFilter support](#backdropfilter-support)
+    - [gradients](#gradients)
   - [Future plans](#future-plans)
   - [Contribution](#contribution)
  

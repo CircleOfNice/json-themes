@@ -1,6 +1,6 @@
 
 export type ThemingReference = `$$${string}`
-type ThemingDefinition = string | ThemingReference | null;
+export type ThemingDefinition = string | ThemingReference | null;
 type ThemingNumberDefinition = ThemingDefinition | number;
 type ThemingImageDefintion = ThemingDefinition;
 
@@ -39,10 +39,10 @@ export type ThemingBackdropFilterDefinition = {
 
 // Colors
 export type ThemingColorMap = Extendable<{
+    backdropFilter?: ThemingBackdropFilterDefinition | ThemingReference,
     background?: ThemingColorDefinition,
     border?: ThemingDefinition,
     filter?: ThemingDefinition,
-    backdropFilter?: ThemingBackdropFilterDefinition | ThemingReference,
     foreground?: ThemingColorDefinition,
     icon?: ThemingColorDefinition,
     shadow?: ThemingDefinition
@@ -97,21 +97,30 @@ export type ThemingBorderSets = {
     [key: string]: ThemingBorderSet
 };
 
+export type ThemingBeforeAfterDefinition = {
+    content: string
+    [key: string]: ThemingDefinition | ThemingReference
+};
 
 // Boxes
 export type ThemingBoxDefinition = Extendable<{
     animation?: "fadeIn" | "popIn" | ThemingReference,
-    borderSet?: string,
-    colorSet?: string,
-    fontSet?: string,
+    borderSet?: string | ThemingBorderSet,
+    colorSet?: string | ThemingColorSet,
+    fontSet?: string | ThemingFontSet,
     height?: ThemingDefinition,
     // margin?: ThemingDefinition,
     padding?: ThemingDefinition,
     width?: ThemingDefinition
 }>;
 
+export type ThemingBoxSet = ThemingBoxDefinition & ThemingSet<{
+    before?: ThemingBeforeAfterDefinition,
+    after?: ThemingBeforeAfterDefinition
+}>
+
 export type ThemingBoxSets = {
-    [key: string]: ThemingBoxDefinition
+    [key: string]: ThemingBoxSet
 }
 
 // General
@@ -128,8 +137,8 @@ export type ThemingConfigSets = {
 };
 
 export type ThemingVariant = Extendable<{
-    theming?: ThemingReference | ThemingBoxDefinition,
-    parts?: { [key: string]: ThemingReference | ThemingBoxDefinition}
+    theming?: ThemingReference | ThemingBoxSet,
+    parts?: { [key: string]: ThemingReference | ThemingBoxSet}
     defaultProps?: object
 }>;
 

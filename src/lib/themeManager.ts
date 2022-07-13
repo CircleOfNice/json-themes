@@ -1,6 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ThemingBackdropFilterDefinition, ThemingBorderDefinition, ThemingBorderMap, ThemingBorderSet, ThemingBoxDefinition, ThemingColorMap, ThemingColorSet, ThemingConfig, ThemingFontDefinition, ThemingFontSet, ThemingGradientDefinition, Transitionable } from "./types";
+import { ThemingBackdropFilterDefinition,
+    ThemingBeforeAfterDefinition,
+    ThemingBorderDefinition,
+    ThemingBorderMap,
+    ThemingBorderSet,
+    ThemingBoxSet,
+    ThemingColorMap,
+    ThemingColorSet,
+    ThemingConfig,
+    ThemingFontDefinition,
+    ThemingFontSet,
+    ThemingGradientDefinition,
+    Transitionable } from "./types";
 import { css, setup } from "goober";
 import { deepmerge } from "deepmerge-ts";
 import { prefix } from "goober/prefixer";
@@ -287,7 +299,7 @@ const fontSetToCss = (colorSet: ThemingFontSet | string, theme: ThemingConfig): 
 /**
  * resolve box defintions from either global boxSets or from neighbour variant definitions
  */
-const resolveBoxDefinition = (def: string | ThemingBoxDefinition | undefined, theme: ThemingConfig, context?: string): ThemingBoxDefinition | null => {
+const resolveBoxDefinition = (def: string | ThemingBoxSet | undefined, theme: ThemingConfig, context?: string): ThemingBoxSet | null => {
     if(!def) return null;
 
     if(typeof def === "string" && def.startsWith("$$")) {
@@ -311,11 +323,31 @@ const resolveBoxDefinition = (def: string | ThemingBoxDefinition | undefined, th
     return null;
 };
 
+const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefinition, target: Array<any>, theme: ThemingConfig, selector?: "hover" | "active" | "focus" | "focus-visible" | "disabled" | "focus-within") => {
+    const slctr = `&${selector ? `:${selector}` : ""}::${mode}`;
+
+    if(selector === "focus")
+        resolveBeforeAfter(mode, inp, target, theme, "focus-within");
+
+    return target.push({
+        [slctr]: Object.fromEntries(
+            Object.keys(inp).map(key => {
+                if(key === "content") return ([key, inp && `"${inp[key]}"`]);
+                if(key === "transitionSpeed") return (["transitionDuration", resolveGlobalsVarString(inp[key], theme)]);
+
+                return ([key, resolveGlobalsVarString(inp && inp[key], theme)]);
+            }
+            )
+        )
+    });
+};
+
 /**
  * Resolve complete box definitions including the sets to CSS
  * @returns Box Definition CSS
  */
-const boxDefToCssProps = (boxDef: ThemingBoxDefinition | null, theme: ThemingConfig, context?: string): Array<object> => {
+// eslint-disable-next-line complexity, max-statements
+const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, context?: string): Array<object> => {
     const res = [];
 
     if(!boxDef) return [];
@@ -361,6 +393,51 @@ const boxDefToCssProps = (boxDef: ThemingBoxDefinition | null, theme: ThemingCon
             width: resolveGlobalsVarString(boxDef.width, theme)
         });
 
+    if(boxDef.before)
+        resolveBeforeAfter("before", boxDef.before, res, theme);
+
+    if(boxDef.after)
+        resolveBeforeAfter("after", boxDef.after, res, theme);
+
+    if(boxDef.__hover) {
+        if(boxDef.__hover.before)
+            resolveBeforeAfter("before", boxDef.__hover.before, res, theme, "hover");
+
+        if(boxDef.__hover.after)
+            resolveBeforeAfter("after", boxDef.__hover.after, res, theme, "hover");
+    }
+
+    if(boxDef.__active) {
+        if(boxDef.__active.before)
+            resolveBeforeAfter("before", boxDef.__active.before, res, theme, "active");
+
+        if(boxDef.__active.after)
+            resolveBeforeAfter("after", boxDef.__active.after, res, theme, "active");
+    }
+
+    if(boxDef.__focus) {
+        if(boxDef.__focus.before)
+            resolveBeforeAfter("before", boxDef.__focus.before, res, theme, "focus");
+
+        if(boxDef.__focus.after)
+            resolveBeforeAfter("after", boxDef.__focus.after, res, theme, "focus");
+    }
+
+    if(boxDef.__focusVisible) {
+        if(boxDef.__focusVisible.before)
+            resolveBeforeAfter("before", boxDef.__focusVisible.before, res, theme, "focus-visible");
+
+        if(boxDef.__focusVisible.after)
+            resolveBeforeAfter("after", boxDef.__focusVisible.after, res, theme, "focus-visible");
+    }
+
+    if(boxDef.__disabled) {
+        if(boxDef.__disabled.before)
+            resolveBeforeAfter("before", boxDef.__disabled.before, res, theme, "disabled");
+
+        if(boxDef.__disabled.after)
+            resolveBeforeAfter("after", boxDef.__disabled.after, res, theme, "disabled");
+    }
 
     return res;
 };
@@ -423,7 +500,7 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
             variant: vrnt.variant,
             parts:   Object.fromEntries(vrnt.parts.map((part: any) => ([part[0], css(boxDefToCssProps(part[1], theme,
                 `${component}.${vrnt.variant === "default" ? "default.parts" : `variants.${vrnt.variant}.parts`}`) as never) || ""]))),
-            className:    vrnt.boxDef ? css(boxDefToCssProps(vrnt.boxDef, theme) as never) : "",
+            className:    vrnt.boxDef ? css(boxDefToCssProps(vrnt.boxDef, theme) as any) : "",
             defaultProps: resolvePropsVars(vrnt.props, theme) || {}
         })) as ComponentsConfig["variants"]
     });
