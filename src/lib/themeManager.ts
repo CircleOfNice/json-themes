@@ -187,6 +187,7 @@ const borderSetToCss = (borderSet: ThemingBorderSet | string, theme: ThemingConf
         set.__active && { "&:active": resolveMap(set.__active) },
         set.__focus && { "&:focus,&focus-within": resolveMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveMap(set.__focusVisible) },
+        set.__checked && { "&:checked,&[aria-checked=true]": resolveMap(set.__checked) },
         set.__disabled && {
             "&:disabled,&[aria-disabled=true]": {
                 ...resolveMap(set.__disabled),
@@ -206,6 +207,7 @@ const borderSetToCss = (borderSet: ThemingBorderSet | string, theme: ThemingConf
 /**
  * theming color set defintion to CSS
  */
+// eslint-disable-next-line complexity
 const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig): object => {
     const set: ThemingColorSet = typeof colorSet === "string" ? theme.sets.colorSets[getVarName(colorSet)] : colorSet;
 
@@ -231,6 +233,7 @@ const colorSetToCss = (colorSet: ThemingColorSet | string, theme: ThemingConfig)
         set.__active && { "&:active": resolveColorMap(set.__active) },
         set.__focus && { "&:focus,&:focus-within": resolveColorMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveColorMap(set.__focusVisible) },
+        set.__checked && { "&:checked,&[aria-checked=true]": resolveColorMap(set.__checked) },
         set.__disabled && {
             "&:disabled,&[aria-disabled=true]": {
                 ...resolveColorMap(set.__disabled),
@@ -280,6 +283,7 @@ const fontSetToCss = (colorSet: ThemingFontSet | string, theme: ThemingConfig): 
         set.__active && { "&:active": resolveFontMap(set.__active) },
         set.__focus && { "&:focus,&focus-within": resolveFontMap(set.__focus) },
         set.__focusVisible && { "&:focus-visible": resolveFontMap(set.__focusVisible) },
+        set.__checked && { "&:checked,&[aria-checked=true]": resolveFontMap(set.__checked) },
         set.__disabled && {
             "&:disabled,&[aria-disabled=true]": {
                 ...resolveFontMap(set.__disabled),
@@ -323,11 +327,14 @@ const resolveBoxDefinition = (def: string | ThemingBoxSet | undefined, theme: Th
     return null;
 };
 
-const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefinition, target: Array<any>, theme: ThemingConfig, selector?: "hover" | "active" | "focus" | "focus-visible" | "disabled" | "focus-within") => {
+const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefinition, target: Array<any>, theme: ThemingConfig, selector?: "hover" | "active" | "focus" | "focus-visible" | "disabled" | "focus-within" | "checked" | "&[aria-checked=true]") => {
     const slctr = `&${selector ? `:${selector}` : ""}::${mode}`;
 
     if(selector === "focus")
         resolveBeforeAfter(mode, inp, target, theme, "focus-within");
+
+    if(selector === "checked")
+        resolveBeforeAfter(mode, inp, target, theme, "&[aria-checked=true]");
 
     return target.push({
         [slctr]: Object.fromEntries(
@@ -429,6 +436,14 @@ const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, co
 
         if(boxDef.__focusVisible.after)
             resolveBeforeAfter("after", boxDef.__focusVisible.after, res, theme, "focus-visible");
+    }
+
+    if(boxDef.__checked) {
+        if(boxDef.__checked.before)
+            resolveBeforeAfter("before", boxDef.__checked.before, res, theme, "checked");
+
+        if(boxDef.__checked.after)
+            resolveBeforeAfter("after", boxDef.__checked.after, res, theme, "checked");
     }
 
     if(boxDef.__disabled) {

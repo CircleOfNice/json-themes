@@ -22,6 +22,7 @@ type ThemingSet<T> = {
     __focus?: Transitionable<T>,
     __focusVisible?: Transitionable<T>,
     __hover?: Transitionable<T>
+    __checked?: Transitionable<T>
 } & Transitionable<T>
 
 export type ThemingDefinitionDefaults = ThemingDefinitionDefaultsEnum;
