@@ -33,7 +33,7 @@ export default defineConfig({
 		},
 		commonjsOptions: {
 			transformMixedEsModules: true,
-			sourceMap: false
+			sourceMap: true
 		}
 	}
 });
