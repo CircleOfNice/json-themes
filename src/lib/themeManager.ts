@@ -26,12 +26,13 @@ import { createGlobalStyles } from "goober/global";
  * @example an :active selector should always be higher in specificity than an :hover
  */
 const sortCssNestings = (a: [string, unknown], b: any) => {
-    if(a[0] === "&:hover") return -1;
-    if(a[0]?.includes("&:focus,&focus-within")) return 0;
-    if(a[0] === "&:focus-visible") return 0;
-    if(a[0] === "&:focus-within") return 0;
-    if(a[0] === "&:active") return 1;
-    if(a[0] === "&:disabled") return 2;
+    if(a[0] === "&:hover") return 1;
+    if(a[0]?.includes("focus")) return -1;
+    if(a[0] === "&:focus-visible") return -1;
+    if(a[0] === "&:focus-within") return -1;
+    if(a[0] === "&:active") return 2;
+    if(a[0] === "&:disabled") return 3;
+    if(a[0] === "&:checked") return 0;
 
     return a[0].toString() > b[0].toString() ? 1 : -1;
 };
@@ -327,14 +328,14 @@ const resolveBoxDefinition = (def: string | ThemingBoxSet | undefined, theme: Th
     return null;
 };
 
-const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefinition, target: Array<any>, theme: ThemingConfig, selector?: "hover" | "active" | "focus" | "focus-visible" | "disabled" | "focus-within" | "checked" | "&[aria-checked=true]") => {
-    const slctr = `&${selector ? `:${selector}` : ""}::${mode}`;
+const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefinition, target: Array<any>, theme: ThemingConfig, selector?: ":hover" | ":active" | ":focus" | ":focus-visible" | ":disabled" | ":focus-within" | ":checked" | "[aria-checked=true]") => {
+    const slctr = `&${selector ? `${selector}` : ""}::${mode}`;
 
-    if(selector === "focus")
-        resolveBeforeAfter(mode, inp, target, theme, "focus-within");
+    if(selector === ":focus")
+        resolveBeforeAfter(mode, inp, target, theme, ":focus-within");
 
-    if(selector === "checked")
-        resolveBeforeAfter(mode, inp, target, theme, "&[aria-checked=true]");
+    if(selector === ":checked")
+        resolveBeforeAfter(mode, inp, target, theme, "[aria-checked=true]");
 
     return target.push({
         [slctr]: Object.fromEntries(
@@ -408,50 +409,50 @@ const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, co
 
     if(boxDef.__hover) {
         if(boxDef.__hover.before)
-            resolveBeforeAfter("before", boxDef.__hover.before, res, theme, "hover");
+            resolveBeforeAfter("before", boxDef.__hover.before, res, theme, ":hover");
 
         if(boxDef.__hover.after)
-            resolveBeforeAfter("after", boxDef.__hover.after, res, theme, "hover");
+            resolveBeforeAfter("after", boxDef.__hover.after, res, theme, ":hover");
     }
 
     if(boxDef.__active) {
         if(boxDef.__active.before)
-            resolveBeforeAfter("before", boxDef.__active.before, res, theme, "active");
+            resolveBeforeAfter("before", boxDef.__active.before, res, theme, ":active");
 
         if(boxDef.__active.after)
-            resolveBeforeAfter("after", boxDef.__active.after, res, theme, "active");
+            resolveBeforeAfter("after", boxDef.__active.after, res, theme, ":active");
     }
 
     if(boxDef.__focus) {
         if(boxDef.__focus.before)
-            resolveBeforeAfter("before", boxDef.__focus.before, res, theme, "focus");
+            resolveBeforeAfter("before", boxDef.__focus.before, res, theme, ":focus");
 
         if(boxDef.__focus.after)
-            resolveBeforeAfter("after", boxDef.__focus.after, res, theme, "focus");
+            resolveBeforeAfter("after", boxDef.__focus.after, res, theme, ":focus");
     }
 
     if(boxDef.__focusVisible) {
         if(boxDef.__focusVisible.before)
-            resolveBeforeAfter("before", boxDef.__focusVisible.before, res, theme, "focus-visible");
+            resolveBeforeAfter("before", boxDef.__focusVisible.before, res, theme, ":focus-visible");
 
         if(boxDef.__focusVisible.after)
-            resolveBeforeAfter("after", boxDef.__focusVisible.after, res, theme, "focus-visible");
+            resolveBeforeAfter("after", boxDef.__focusVisible.after, res, theme, ":focus-visible");
     }
 
     if(boxDef.__checked) {
         if(boxDef.__checked.before)
-            resolveBeforeAfter("before", boxDef.__checked.before, res, theme, "checked");
+            resolveBeforeAfter("before", boxDef.__checked.before, res, theme, ":checked");
 
         if(boxDef.__checked.after)
-            resolveBeforeAfter("after", boxDef.__checked.after, res, theme, "checked");
+            resolveBeforeAfter("after", boxDef.__checked.after, res, theme, ":checked");
     }
 
     if(boxDef.__disabled) {
         if(boxDef.__disabled.before)
-            resolveBeforeAfter("before", boxDef.__disabled.before, res, theme, "disabled");
+            resolveBeforeAfter("before", boxDef.__disabled.before, res, theme, ":disabled");
 
         if(boxDef.__disabled.after)
-            resolveBeforeAfter("after", boxDef.__disabled.after, res, theme, "disabled");
+            resolveBeforeAfter("after", boxDef.__disabled.after, res, theme, ":disabled");
     }
 
     return res;
@@ -604,7 +605,6 @@ export class ThemeManager implements IThemeManager {
 
             if(styleRoot)
                 styleRoot.remove();
-
 
             const GlobalStyles = createGlobalStyles`html,body {}`;
 
