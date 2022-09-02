@@ -21,7 +21,8 @@ const defaultPkgJsonWhitelist = [
     "browserlist",
     "engines",
     "peerDependencies",
-    "dependencies"
+    "dependencies",
+    "sideEffects"
 ];
 
 // eslint-disable-next-line no-unused-vars
