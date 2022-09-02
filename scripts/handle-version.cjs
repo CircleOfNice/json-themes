@@ -16,7 +16,7 @@ rl.question(`Type of new version: ${allowed.join(" | ")}\nversion: `, res => {
     if(allowed.includes(res)) {
         const vers = res === "current" ? pkg.version : res;
 
-        exec(`npm version ${vers}`, (_err, stdout, stderr) => {
+        exec(`npm version ${vers} --allow-same-version`, (_err, stdout, stderr) => {
             console.log(stdout);
 
             if(stderr) {
