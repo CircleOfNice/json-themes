@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { exec } = require("child_process");
 const readline = require("readline");
+const pkg = require("../package.json");
 
 const allowed = [
-    "major", "minor", "patch", "premajor", "preminor", "prepatch", "prerelease"
+    "major", "minor", "patch", "premajor", "preminor", "prepatch", "prerelease", "current"
 ];
 
 const rl = readline.createInterface({
@@ -13,12 +14,14 @@ const rl = readline.createInterface({
 
 rl.question(`Type of new version: ${allowed.join(" | ")}\nversion: `, res => {
     if(allowed.includes(res)) {
-        exec(`npm version ${res}`, (_err, stdout, stderr) => {
+        const vers = res === "current" ? pkg.version : res;
+
+        exec(`npm version ${vers}`, (_err, stdout, stderr) => {
             console.log(stdout);
 
             if(stderr) {
                 console.error(stderr);
-                throw Error("Error increasing version, cancelling...");
+                throw Error(`Error increasing version ${vers}, cancelling...`);
             }
         });
         rl.close();
