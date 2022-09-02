@@ -24,4 +24,5 @@ setupfile
 *coverage
 **/store
 .preset
-.vscode/
+.vscode
+**/.vscode
