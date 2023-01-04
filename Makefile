@@ -44,7 +44,7 @@ clean:
 rebuild: clean install build
 	@echo "Rebuild completed."
 
-publish:
+publish: clean install
 	npm run pub
 
 update:
