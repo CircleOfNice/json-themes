@@ -127,7 +127,7 @@ Of course this also works for apps with a lot of atomic / molecular components a
 Inside your component-library you then can just install `json-themes` via
 
 ```
-npm install json-themes
+npm install @circle/json-themes
 ```
 
 While the library is designed to support runtime-exchangeable theme configs stored in JSON, it's recommended to have at least one theme specified as `export const ...` inside a typescript / javascript file - because here you will get full developer experience with all the options strongly typed - and it's there from the beginning, just to avoid style-flickering.
@@ -139,7 +139,7 @@ While the library is designed to support runtime-exchangeable theme configs stor
 ```tsx
 
 export const Button = (_props) => {
-    const [variant, props] = useThemingVariant("Button", _props.variant || "default");
+    const [variant, props] = useThemingVariant("Button", _props.variant || "default", _props);
 
     return (
         <button {...variant?.defaultProps} className={`my-button ${variant.className}`}>
@@ -149,6 +149,14 @@ export const Button = (_props) => {
 }
 
 ```
+
+
+> *Q: Why should `props` get passed to the theming library?*
+>
+> A: To share (one-way) values / variables from theming config file with your component's code. 
+> 
+> You might have components where for example a color value may not only be used in CSS but also inside JS. To pass the variable coming from your theming config inside your component's code, `props` are used. Inside the theming config you can pass the values inside the `defaultProps` scope. If the prop is already existing, it will get overwritten!
+
 
 3. Inside you're App's code you now will get a feeling of how many variants of a component you'll need. Typically you'll need a few button variants `[callToAction, default, menu, newsletter, ...]`, and for most of the other components only a default variant. Make sure that every theme you'll create has all the necessary variants, your App relies on.
 

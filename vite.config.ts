@@ -10,8 +10,6 @@ const config = {
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
-	console.log(Object.keys(peerDependencies))
-
 	return {
 		plugins: [react({
 			jsxRuntime: "classic"
