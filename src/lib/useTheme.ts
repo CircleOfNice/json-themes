@@ -10,15 +10,15 @@ type ThemingVariant<T = object> = {
     variant: string
 }
 
-export const useThemeVariants = (component: string) => {
+export const useThemeVariants = <T>(component: string): ThemingVariant<T>[] | null => {
     const themeContext = useContext(ThemingContext);
-    const [res, setRes] = useState<ThemingVariant[] | null>();
+    const [res, setRes] = useState<ThemingVariant<T>[] | null>();
 
     useEffect(() => {
-        setRes(themeContext?.find(x => x.component === component)?.variants || null);
+        setRes((themeContext?.find(x => x.component === component)?.variants as ThemingVariant<T>[]) || null);
     }, [themeContext, component]);
 
-    return res;
+    return res || null;
 };
 
 export const useThemeVariant = <T>(component: string, variant: string | null = "default", props: T): [ThemingVariant<T> | null, T] => {
