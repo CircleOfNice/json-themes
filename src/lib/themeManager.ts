@@ -547,7 +547,7 @@ const resolveConfig = (themeConfig: ThemingConfig, themesCache: [], themesPool: 
     const configKeys = Object.keys(themeConfig);
     const neededKeys = ["name", "components", "version", "globals", "sets"];
 
-    if(!neededKeys.every(key => configKeys.includes(key))) throw Error(`Falsy Configuration: Please check your Config schema for ${themeConfig.name || "config"}`);
+    if(!neededKeys.every(key => configKeys.includes(key))) throw Error(`Falsy Theming Configuration: Please check your Config schema for ${themeConfig.name || "config"}`);
 
     if(themeConfig.basedOn) {
         const resolveBasedOn = (conf: ThemingConfig): ThemingConfig => {

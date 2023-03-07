@@ -32,8 +32,6 @@ export const ThemingProvider = (props: PropsWithChildren<{
         if(manager && props.themingConfig) {
             const result = manager.loadTheme(props.themingConfig, props.pool);
 
-            console.log({ result });
-
             setSuppressTransitions(true);
 
             setTheme(result);
