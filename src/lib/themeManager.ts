@@ -501,14 +501,24 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
         },
         ...(componentConfig.variants ? Object.keys(componentConfig.variants).filter(x => x !== "default").map(vrnt => componentConfig.variants && ({
             variant: vrnt,
-            parts:   componentConfig.variants[vrnt].parts ? Object.keys(componentConfig.variants[vrnt].parts as object).map(key => ([key,
-                componentConfig.variants &&
-                resolveBoxDefinition((componentConfig.variants[vrnt].parts as any)[key], theme)
-            ])) : [],
+            parts:   (componentConfig.variants[vrnt]?.parts || componentConfig.default?.parts) ? Object.entries(
+                // merge parts from default into every variant per default
+                deepmerge({}, (componentConfig.default?.parts || {}), (componentConfig.variants[vrnt]?.parts as object || {}))
+            ).map(([key, value]) => {
+                return ([key,
+                    componentConfig.variants &&
+                    resolveBoxDefinition(value, theme)
+                ]);
+            }) : [],
             boxDef: resolveBoxDefinition(componentConfig.variants[vrnt].theming, theme),
             props:  componentConfig.variants[vrnt].defaultProps
         })) : [])
-    ].filter(x => x && x !== undefined && x.boxDef !== null); // eslint-disable-line no-undefined
+    ].map(x => {
+        console.log({ x });
+        return x;
+    }).filter(x => x && x !== undefined && x.boxDef !== null); // eslint-disable-line no-undefined
+
+    console.log("xxx", { variants });
 
     return deepmerge(extendedStuff, {
         component: component,
