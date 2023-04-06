@@ -486,7 +486,6 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
             variants:  []
         };
 
-
     const extendedStuff = componentConfig.__extends ? resolveComponent(getVarName(componentConfig.__extends), theme) : {};
 
     const variants = [
@@ -513,12 +512,7 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
             boxDef: resolveBoxDefinition(componentConfig.variants[vrnt].theming, theme),
             props:  componentConfig.variants[vrnt].defaultProps
         })) : [])
-    ].map(x => {
-        console.log({ x });
-        return x;
-    }).filter(x => x && x !== undefined && x.boxDef !== null); // eslint-disable-line no-undefined
-
-    console.log("xxx", { variants });
+    ].filter(x => x && x.boxDef !== null); // eslint-disable-line no-undefined
 
     return deepmerge(extendedStuff, {
         component: component,
