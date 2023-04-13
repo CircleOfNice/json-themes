@@ -28,7 +28,6 @@ export const ThemingProvider = (props: PropsWithChildren<{
         if(!props.themingConfig)
             throw new Error("No Theming Config provided");
 
-
         if(manager && props.themingConfig) {
             const result = manager.loadTheme(props.themingConfig, props.pool);
 

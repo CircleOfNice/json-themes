@@ -18,11 +18,14 @@ export type Transitionable<T> = T & {
 
 type ThemingSet<T> = {
     __active?: Transitionable<T>,
+    __checked?: Transitionable<T>,
+    __current?: Transitionable<T>,
     __disabled?: Transitionable<T>,
     __focus?: Transitionable<T>,
     __focusVisible?: Transitionable<T>,
-    __hover?: Transitionable<T>
-    __checked?: Transitionable<T>
+    __hover?: Transitionable<T>,
+    __invalid?: Transitionable<T>,
+    __pressed?: Transitionable<T>
 } & Transitionable<T>
 
 export type ThemingDefinitionDefaults = ThemingDefinitionDefaultsEnum;
@@ -105,14 +108,13 @@ export type ThemingBeforeAfterDefinition = {
 
 // Boxes
 export type ThemingBoxDefinition = Extendable<{
-    animation?: "fadeIn" | "popIn" | ThemingReference,
     borderSet?: string | ThemingBorderSet,
     colorSet?: string | ThemingColorSet,
     fontSet?: string | ThemingFontSet,
     height?: ThemingDefinition,
-    // margin?: ThemingDefinition,
     padding?: ThemingDefinition,
-    width?: ThemingDefinition
+    width?: ThemingDefinition,
+    transform?: ThemingDefinition
 }>;
 
 export type ThemingBoxSet = ThemingBoxDefinition & ThemingSet<{
@@ -154,12 +156,7 @@ export type ThemingComponents = {
     [key: string]: ThemingComponent
 }
 
-export type ThemingAnimations = {
-    [key: string]: string
-}
-
 export type ThemingConfigFile = {
-    animations?: ThemingAnimations
     assets?: {
         baseUrl?: string
     },
