@@ -18,6 +18,20 @@ import { deepmerge, deepmergeCustom } from "deepmerge-ts";
 import { prefix } from "goober/prefixer";
 import { createGlobalStyles } from "goober/global";
 
+const dollarVarRegex = /\$\$(?:[\w.]*\|?)/gm;
+
+const selectors = {
+    invalid:      "&:invalid,&[aria-invalid=true]",
+    checked:      "&:checked,&[aria-checked=true]",
+    pressed:      "&[aria-pressed=true]",
+    current:      "&[aria-current=true]",
+    focus:        "&:focus,&focus-within",
+    focusVisible: "&:focus-visible",
+    hover:        "&:hover",
+    active:       "&:active",
+    disabled:     "&:disabled,&[aria-disabled=true]"
+};
+
 /**
  * A Function to properly sort CSS Selectors
  * @param a First Sort Parameter(key/value pair)
@@ -58,8 +72,10 @@ const getDeepAttribute = (root: Record<string, any>, path: string[], value: any 
     const val = value || root;
 
     if(!path || path.length === 0) {
-        if(typeof val === "string" && val.startsWith("$$"))
-            return getDeepAttribute(root, getVarName(val).split("."));
+        if(typeof val === "string" && val.includes("$$"))
+            return `${value}`.replace(dollarVarRegex,
+                str => getDeepAttribute(root, getVarName(str.replace("|", "")).split("."))
+            );
 
         return val;
     }
@@ -98,7 +114,9 @@ const resolveGlobalsVar = (varStr: string, theme: ThemingConfig, customResolver?
  * @returns {string} either the value or the resolved value from a variable
  */
 const resolveGlobalsVarString = (value: unknown, theme: ThemingConfig, customResolver?: (res: unknown) => any) => {
-    return (`${value}`.replace(/\$\$[\w.]*/gm, str => resolveGlobalsVar(str, theme, customResolver)));
+    return (`${value}`.replace(dollarVarRegex, str => {
+        return resolveGlobalsVar(str.replaceAll("|", ""), theme, customResolver);
+    }));
 };
 
 /**
@@ -115,7 +133,7 @@ const resolvePropsVars = (props: any, theme: ThemingConfig) => {
     const resolvedValues: Array<any> = keys?.map(key => {
         const value = props[key];
 
-        if(typeof value === "string" && value.startsWith("$$"))
+        if(typeof value === "string")
             return resolveGlobalsVarString(value, theme);
 
 
@@ -152,7 +170,7 @@ const resolveColorsDefinition = (str: unknown, theme: ThemingConfig, allowGradie
 // eslint-disable-next-line @typescript-eslint/ban-types
 const resolveBackdropFilterDefinition = (obj: ThemingBackdropFilterDefinition | string, theme: ThemingConfig): Object => {
     if(typeof obj === "string" && obj.startsWith("$$"))
-        return resolveBackdropFilterDefinition(resolveGlobalsVar(obj, theme, (resolvedObject => resolvedObject)), theme);
+        return resolveBackdropFilterDefinition(resolveGlobalsVarString(obj, theme, (resolvedObject => resolvedObject)), theme);
 
     return {
         "backdropFilter":                             resolveGlobalsVarString((obj as ThemingBackdropFilterDefinition).definition, theme),
@@ -198,16 +216,16 @@ const borderSetToCss = (borderSet: ThemingBorderSet | string, theme: ThemingConf
 
     const resolvedSet = Object.assign({},
         resolveBorderMap(set),
-        set.__hover && { "&:hover": resolveBorderMap(set.__hover) },
-        set.__active && { "&:active": resolveBorderMap(set.__active) },
-        set.__focus && { "&:focus,&focus-within": resolveBorderMap(set.__focus) },
-        set.__focusVisible && { "&:focus-visible": resolveBorderMap(set.__focusVisible) },
-        set.__checked && { "&:checked,&[aria-checked=true]": resolveBorderMap(set.__checked) },
-        set.__pressed && { "&[aria-pressed=true]": resolveBorderMap(set.__pressed) },
-        set.__current && { "&[aria-current=true]": resolveBorderMap(set.__current) },
-        set.__invalid && { "&:invalid,&[aria-invalid=true]": resolveBorderMap(set.__invalid) },
+        set.__hover && { [selectors.hover]: resolveBorderMap(set.__hover) },
+        set.__active && { [selectors.active]: resolveBorderMap(set.__active) },
+        set.__focus && { [selectors.focus]: resolveBorderMap(set.__focus) },
+        set.__focusVisible && { [selectors.focusVisible]: resolveBorderMap(set.__focusVisible) },
+        set.__checked && { [selectors.checked]: resolveBorderMap(set.__checked) },
+        set.__pressed && { [selectors.pressed]: resolveBorderMap(set.__pressed) },
+        set.__current && { [selectors.current]: resolveBorderMap(set.__current) },
+        set.__invalid && { [selectors.invalid]: resolveBorderMap(set.__invalid) },
         set.__disabled && {
-            "&:disabled,&[aria-disabled=true]": {
+            [selectors.disabled]: {
                 ...resolveBorderMap(set.__disabled),
                 "pointer-events": "none"
             }
@@ -251,16 +269,16 @@ const colorSetToCss = (colorSet: ThemingColorSet | ThemingColorSet[] | string, t
 
     const resolvedSet = Object.assign({},
         resolveColorMap(set),
-        set.__hover && { "&:hover": resolveColorMap(set.__hover) },
-        set.__active && { "&:active": resolveColorMap(set.__active) },
-        set.__focus && { "&:focus,&:focus-within": resolveColorMap(set.__focus) },
-        set.__focusVisible && { "&:focus-visible": resolveColorMap(set.__focusVisible) },
-        set.__checked && { "&:checked,&[aria-checked=true]": resolveColorMap(set.__checked) },
-        set.__pressed && { "&[aria-pressed=true]": resolveColorMap(set.__pressed) },
-        set.__current && { "&[aria-current=true]": resolveColorMap(set.__current) },
-        set.__invalid && { "&:invalid,&[aria-invalid=true]": resolveColorMap(set.__invalid) },
+        set.__hover && { [selectors.hover]: resolveColorMap(set.__hover) },
+        set.__active && { [selectors.active]: resolveColorMap(set.__active) },
+        set.__focus && { [selectors.focus]: resolveColorMap(set.__focus) },
+        set.__focusVisible && { [selectors.focusVisible]: resolveColorMap(set.__focusVisible) },
+        set.__checked && { [selectors.checked]: resolveColorMap(set.__checked) },
+        set.__pressed && { [selectors.pressed]: resolveColorMap(set.__pressed) },
+        set.__current && { [selectors.current]: resolveColorMap(set.__current) },
+        set.__invalid && { [selectors.invalid]: resolveColorMap(set.__invalid) },
         set.__disabled && {
-            "&:disabled,&[aria-disabled=true]": {
+            [selectors.disabled]: {
                 ...resolveColorMap(set.__disabled),
                 "pointer-events": "none"
             }
@@ -309,16 +327,16 @@ const fontSetToCss = (fontSet: ThemingFontSet | ThemingFontSet[] | string, theme
 
     const resolvedSet = Object.assign({},
         resolveFontMap(set),
-        set.__hover && { "&:hover": resolveFontMap(set.__hover) },
-        set.__active && { "&:active": resolveFontMap(set.__active) },
-        set.__focus && { "&:focus,&focus-within": resolveFontMap(set.__focus) },
-        set.__focusVisible && { "&:focus-visible": resolveFontMap(set.__focusVisible) },
-        set.__checked && { "&:checked,&[aria-checked=true]": resolveFontMap(set.__checked) },
-        set.__pressed && { "&[aria-pressed=true]": resolveFontMap(set.__pressed) },
-        set.__current && { "&[aria-current=true]": resolveFontMap(set.__current) },
-        set.__invalid && { "&:invalid,&[aria-invalid=true]": resolveFontMap(set.__invalid) },
+        set.__hover && { [selectors.hover]: resolveFontMap(set.__hover) },
+        set.__active && { [selectors.active]: resolveFontMap(set.__active) },
+        set.__focus && { [selectors.focus]: resolveFontMap(set.__focus) },
+        set.__focusVisible && { [selectors.focusVisible]: resolveFontMap(set.__focusVisible) },
+        set.__checked && { [selectors.checked]: resolveFontMap(set.__checked) },
+        set.__pressed && { [selectors.pressed]: resolveFontMap(set.__pressed) },
+        set.__current && { [selectors.current]: resolveFontMap(set.__current) },
+        set.__invalid && { [selectors.invalid]: resolveFontMap(set.__invalid) },
         set.__disabled && {
-            "&:disabled,&[aria-disabled=true]": {
+            [selectors.disabled]: {
                 ...resolveFontMap(set.__disabled),
                 "pointer-events": "none"
             }
@@ -370,14 +388,8 @@ const resolveBoxDefinition = (def: string | ThemingBoxSet | undefined, theme: Th
     return null;
 };
 
-const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefinition, target: Array<any>, theme: ThemingConfig, selector?: ":hover" | ":active" | ":focus" | ":focus-visible" | ":disabled" | ":focus-within" | ":checked" | "[aria-checked=true]") => {
+const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefinition, target: Array<any>, theme: ThemingConfig, selector?: keyof typeof selectors) => {
     const slctr = `&${selector ? `${selector}` : ""}::${mode}`;
-
-    if(selector === ":focus")
-        resolveBeforeAfter(mode, inp, target, theme, ":focus-within");
-
-    if(selector === ":checked")
-        resolveBeforeAfter(mode, inp, target, theme, "[aria-checked=true]");
 
     return target.push({
         [slctr]: Object.fromEntries(
@@ -397,7 +409,7 @@ const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefi
  * @returns Box Definition CSS
  */
 // eslint-disable-next-line complexity, max-statements
-const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, context?: string): Array<object> => {
+const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, context?: string, selector?: keyof typeof selectors): Array<object> => {
     const res = [];
 
     if(!boxDef) return [];
@@ -412,10 +424,10 @@ const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, co
             context
         ));
 
-
     if(boxDef.transform)
         res.push({
-            transform: resolveGlobalsVarString(boxDef.transform, theme)
+            "transform":   resolveGlobalsVarString(boxDef.transform, theme),
+            "will-change": "transform"
         });
 
     if(boxDef.borderSet)
@@ -448,82 +460,46 @@ const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, co
         });
 
     if(boxDef.before)
-        resolveBeforeAfter("before", boxDef.before, res, theme);
+        resolveBeforeAfter("before", boxDef.before, res, theme, selector);
 
     if(boxDef.after)
-        resolveBeforeAfter("after", boxDef.after, res, theme);
+        resolveBeforeAfter("after", boxDef.after, res, theme, selector);
 
-    if(boxDef.__hover) {
-        if(boxDef.__hover.before)
-            resolveBeforeAfter("before", boxDef.__hover.before, res, theme, ":hover");
+    if(boxDef.__hover)
+        res.splice(0, 0, { [selectors.hover]: boxDefToCssProps(boxDef.__hover, theme, context, "hover")
+            .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
-        if(boxDef.__hover.after)
-            resolveBeforeAfter("after", boxDef.__hover.after, res, theme, ":hover");
-    }
+    if(boxDef.__active)
+        res.splice(0, 0, { [selectors.active]: boxDefToCssProps(boxDef.__active, theme, context, "active")
+            .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
-    if(boxDef.__active) {
-        if(boxDef.__active.before)
-            resolveBeforeAfter("before", boxDef.__active.before, res, theme, ":active");
+    if(boxDef.__focus)
+        res.splice(0, 0, { [selectors.focus]: boxDefToCssProps(boxDef.__focus, theme, context, "focus")
+            .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
-        if(boxDef.__active.after)
-            resolveBeforeAfter("after", boxDef.__active.after, res, theme, ":active");
-    }
+    if(boxDef.__focusVisible)
+        res.splice(0, 0, { [selectors.focusVisible]: boxDefToCssProps(boxDef.__focusVisible, theme, context, "focusVisible")
+            .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
-    if(boxDef.__focus) {
-        if(boxDef.__focus.before)
-            resolveBeforeAfter("before", boxDef.__focus.before, res, theme, ":focus");
+    if(boxDef.__checked)
+        res.splice(0, 0, { [selectors.checked]: boxDefToCssProps(boxDef.__checked, theme, context, "checked")
+            .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
-        if(boxDef.__focus.after)
-            resolveBeforeAfter("after", boxDef.__focus.after, res, theme, ":focus");
-    }
+    if(boxDef.__disabled)
+        res.splice(0, 0, { [selectors.disabled]: boxDefToCssProps(boxDef.__disabled, theme, context, "disabled")
+            .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
-    if(boxDef.__focusVisible) {
-        if(boxDef.__focusVisible.before)
-            resolveBeforeAfter("before", boxDef.__focusVisible.before, res, theme, ":focus-visible");
+    if(boxDef.__invalid)
+        res.splice(0, 0, { [selectors.invalid]: boxDefToCssProps(boxDef.__invalid, theme, context, "invalid")
+            .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
-        if(boxDef.__focusVisible.after)
-            resolveBeforeAfter("after", boxDef.__focusVisible.after, res, theme, ":focus-visible");
-    }
+    if(boxDef.__pressed)
+        res.splice(0, 0, { [selectors.pressed]: boxDefToCssProps(boxDef.__pressed, theme, context, "pressed")
+            .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
-    if(boxDef.__checked) {
-        if(boxDef.__checked.before)
-            resolveBeforeAfter("before", boxDef.__checked.before, res, theme, ":checked");
-
-        if(boxDef.__checked.after)
-            resolveBeforeAfter("after", boxDef.__checked.after, res, theme, ":checked");
-    }
-
-    if(boxDef.__disabled) {
-        if(boxDef.__disabled.before)
-            resolveBeforeAfter("before", boxDef.__disabled.before, res, theme, ":disabled");
-
-        if(boxDef.__disabled.after)
-            resolveBeforeAfter("after", boxDef.__disabled.after, res, theme, ":disabled");
-    }
-
-    if(boxDef.__invalid) {
-        if(boxDef.__invalid.before)
-            resolveBeforeAfter("before", boxDef.__invalid.before, res, theme, ":disabled");
-
-        if(boxDef.__invalid.after)
-            resolveBeforeAfter("after", boxDef.__invalid.after, res, theme, ":disabled");
-    }
-
-    if(boxDef.__pressed) {
-        if(boxDef.__pressed.before)
-            resolveBeforeAfter("before", boxDef.__pressed.before, res, theme, ":disabled");
-
-        if(boxDef.__pressed.after)
-            resolveBeforeAfter("after", boxDef.__pressed.after, res, theme, ":disabled");
-    }
-
-    if(boxDef.__current) {
-        if(boxDef.__current.before)
-            resolveBeforeAfter("before", boxDef.__current.before, res, theme, ":disabled");
-
-        if(boxDef.__current.after)
-            resolveBeforeAfter("after", boxDef.__current.after, res, theme, ":disabled");
-    }
+    if(boxDef.__current)
+        res.splice(0, 0, { [selectors.current]: boxDefToCssProps(boxDef.__current, theme, context, "current")
+            .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     return [deepmerge(
         ...res
@@ -695,6 +671,8 @@ export class ThemeManager implements IThemeManager {
 
         const resolvedConfig = resolveConfig(themeConfig, this.__loadedThemes as [], pool || []);
 
+        console.info("Theming configuration:", resolvedConfig);
+
         if(resolvedConfig === null) return null;
 
         const components = Object.keys(resolvedConfig.components);
@@ -711,6 +689,8 @@ export class ThemeManager implements IThemeManager {
                 components:   components.map(comp => resolveComponent(comp, resolvedConfig)),
                 globalStyles: GlobalStyles
             };
+
+            console.info("Current Theme: ", res);
 
             this.__lastActiveTheme = {
                 name: resolvedConfig.name,

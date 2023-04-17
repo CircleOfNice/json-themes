@@ -107,14 +107,15 @@ export type ThemingBeforeAfterDefinition = {
 };
 
 // Boxes
-export type ThemingBoxDefinition = Extendable<{
-    borderSet?: string | ThemingBorderSet,
-    colorSet?: string | ThemingColorSet,
-    fontSet?: string | ThemingFontSet,
+export type ThemingBoxDefinition = ThemingSet<{
     height?: ThemingDefinition,
     padding?: ThemingDefinition,
     width?: ThemingDefinition,
     transform?: ThemingDefinition
+}> & Extendable<{
+    borderSet?: string | ThemingBorderSet,
+    colorSet?: string | ThemingColorSet,
+    fontSet?: string | ThemingFontSet
 }>;
 
 export type ThemingBoxSet = ThemingBoxDefinition & ThemingSet<{
