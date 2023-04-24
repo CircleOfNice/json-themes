@@ -2,18 +2,20 @@
 import { defineConfig } from "vite";
 const path = require("path");
 import react from "@vitejs/plugin-react";
-import { peerDependencies } from './package.json'
+import pkgJson from './package.json'
 
 const config = {
 	libName: "@circle/json-themes"
 }
 
+const allExternals = [...Object.keys((pkgJson as any).peerDependencies || {}), ...Object.keys((pkgJson as any).dependencies || {})];
+
 // https://vitejs.dev/config/
 export default defineConfig(() => {
 	return {
-		plugins: [react({
-			jsxRuntime: "classic"
-		})],
+		plugins: [
+			react()
+		],
 		build: {
 			cssCodeSplit: false,
 			emptyOutDir: true,
@@ -26,17 +28,18 @@ export default defineConfig(() => {
 				fileName: (format) => `index.${format}.js`
 			},
 			rollupOptions: {
-				external: [...Object.keys(peerDependencies)],
+				external: allExternals,
 				cache: false,
+				treeshake: true,
 				output: {
 					exports: "named",
 					compact: true,
 					sourcemap: false,
 					minifyInternalExports: true,
-					strict: true,
+					strict: false,
 					globals: {
 						...Object.fromEntries(
-							Object.keys(peerDependencies).map(key => {
+							allExternals.map(key => {
 								if(key === "react") return [key, "React"];
 								if(key === "react-dom") return [key, "ReactDOM"];
 
@@ -47,8 +50,7 @@ export default defineConfig(() => {
 				}
 			},
 			commonjsOptions: {
-				sourceMap: false,
-				transformMixedEsModules: true
+				sourceMap: false
 			}
 		},
 

@@ -548,9 +548,9 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
         },
         ...(componentConfig.variants ? Object.keys(componentConfig.variants).filter(x => x !== "default").map(vrnt => componentConfig.variants && ({
             variant: vrnt,
-            parts:   (componentConfig.variants[vrnt]?.parts || componentConfig.default?.parts) ? Object.entries(
+            parts:   (componentConfig.variants[vrnt]?.parts ?? componentConfig.default?.parts) ? Object.entries(
                 // merge parts from default into every variant per default
-                deepmerge({}, (componentConfig.default?.parts || {}), (componentConfig.variants[vrnt]?.parts as object || {}))
+                deepmerge({}, (componentConfig.default?.parts ?? {}), (componentConfig.variants[vrnt]?.parts as object ?? {}))
             ).map(([key, value]) => {
                 return ([key,
                     componentConfig.variants &&
@@ -585,7 +585,6 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
 };
 
 export type IThemeManager = {
-    readonly __loadedThemes: Array<ThemingConfig>
     readonly __lastActiveTheme: {
         name: string,
         components: ComponentsConfig[],
@@ -594,7 +593,8 @@ export type IThemeManager = {
     init: (componentCreationFunction: Function) => void // eslint-disable-line @typescript-eslint/ban-types
     loadTheme: (themeConfig: ThemingConfig, pool?: ThemingConfig[]) => {
         components: ComponentsConfig[],
-        globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
+        globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types,
+        name: string
     } | null
 }
 
@@ -605,7 +605,7 @@ export type IThemeManager = {
  * @param themesPool other not yet loaded configs
  * @returns a resolved config (merged with inheritants)
  */
-const resolveConfig = (themeConfig: ThemingConfig, themesCache: [], themesPool: ThemingConfig[]) => {
+const resolveConfig = (themeConfig: ThemingConfig, themesPool: ThemingConfig[]) => {
     const configKeys = Object.keys(themeConfig);
     const neededKeys = ["name", "components", "version", "globals", "sets"];
 
@@ -614,8 +614,6 @@ const resolveConfig = (themeConfig: ThemingConfig, themesCache: [], themesPool: 
     if(themeConfig.basedOn) {
         const resolveBasedOn = (conf: ThemingConfig): ThemingConfig => {
             if(!conf.basedOn || conf.basedOn === "") return conf;
-
-            const cachedTheme = themesCache.find((x: ThemingConfig) => x.name === conf.basedOn);
 
             const merger = deepmergeCustom({
                 enableImplicitDefaultMerging: true,
@@ -628,10 +626,6 @@ const resolveConfig = (themeConfig: ThemingConfig, themesCache: [], themesPool: 
                     return utils.actions.defaultMerge;
                 }
             });
-
-            if(cachedTheme)
-                return merger(resolveBasedOn(cachedTheme), conf);
-
 
             if(themesPool) {
                 const res = themesPool.find((x: ThemingConfig) => x.name === conf.basedOn);
@@ -648,13 +642,14 @@ const resolveConfig = (themeConfig: ThemingConfig, themesCache: [], themesPool: 
     return themeConfig;
 };
 
+export type ThemeType = {
+    name: string,
+    components: ComponentsConfig[],
+    globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
+}
+
 export class ThemeManager implements IThemeManager {
-    __loadedThemes = [];
-    __lastActiveTheme: null | {
-        name: string,
-        components: ComponentsConfig[],
-        globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
-    } = null;
+    __lastActiveTheme: null | ThemeType = null;
 
     init(componentCreationFunction: Function) { // eslint-disable-line @typescript-eslint/ban-types
         setup(componentCreationFunction, prefix);
@@ -664,20 +659,15 @@ export class ThemeManager implements IThemeManager {
     loadTheme(_themeConfig: ThemingConfig, pool?: ThemingConfig[]) {
         if(!_themeConfig) throw Error("No Theming Config found!");
 
-        const themeConfig = { ..._themeConfig };
+        const resolvedConfig = resolveConfig(deepmerge({}, _themeConfig), pool || []);
 
-        if(!this.__loadedThemes.find((x: ThemingConfig) => x.name === themeConfig.name))
-            this.__loadedThemes.push({ ...themeConfig } as never);
-
-        const resolvedConfig = resolveConfig(themeConfig, this.__loadedThemes as [], pool || []);
-
-        console.info("Theming configuration:", resolvedConfig);
+        console.debug("Theming configuration:", resolvedConfig);
 
         if(resolvedConfig === null) return null;
 
         const components = Object.keys(resolvedConfig.components);
 
-        if(this.__lastActiveTheme?.name !== resolvedConfig.name) {
+        if(resolvedConfig.name) {
             const styleRoot = (document || window.document).getElementById("_goober");
 
             if(styleRoot)
@@ -686,23 +676,15 @@ export class ThemeManager implements IThemeManager {
             const GlobalStyles = createGlobalStyles`html,body {}`;
 
             const res = {
+                name:         resolvedConfig.name,
                 components:   components.map(comp => resolveComponent(comp, resolvedConfig)),
                 globalStyles: GlobalStyles
             };
 
-            console.info("Current Theme: ", res);
-
-            this.__lastActiveTheme = {
-                name: resolvedConfig.name,
-                ...res
-            };
+            this.__lastActiveTheme = res;
 
             return res;
         }
-
-        if(this.__lastActiveTheme.name === resolvedConfig.name)
-            return this.__lastActiveTheme;
-
 
         return null;
     }

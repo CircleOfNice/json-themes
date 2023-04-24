@@ -1,41 +1,42 @@
-import React, { PropsWithChildren, useEffect, useState } from "react";
+import React, { PropsWithChildren, useEffect, useRef, useState } from "react";
 import { ComponentsConfig, IThemeManager, ThemeManager } from "./themeManager";
 import { ThemingConfig } from "./types";
+import { deepmerge } from "deepmerge-ts";
 
-export const ThemingContext = React.createContext<null | ComponentsConfig[]>(null);
+export const ThemingContext = React.createContext<null | ComponentsConfig[]>([]);
+
+type ThemingContexType = {
+    name: string,
+    components: ComponentsConfig[]
+    globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
+}
 
 export const ThemingProvider = (props: PropsWithChildren<{
-    themingConfig: ThemingConfig,
+    themingConfig?: ThemingConfig,
     pool?: ThemingConfig[],
     suppressTransitionsTimeout?: number
 }>) => {
-    const [manager, setManager] = useState<IThemeManager>();
-    const [theme, setTheme] = useState<{
-        components: ComponentsConfig[]
-        globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
-    } | null>(null);
+    const manager = useRef<IThemeManager>(new ThemeManager());
+    const [theme, setTheme] = useState<ThemingContexType | null>(null);
     const [suppressTransitions, setSuppressTransitions] = useState(false);
 
     useEffect(() => {
-        const mgr = new ThemeManager();
-
-        mgr.init(React.createElement);
-
-        setManager(mgr);
-    }, []);
+        if(manager.current)
+            manager.current.init(React.createElement);
+    }, [manager.current]);
 
     useEffect(() => {
         if(!props.themingConfig)
             throw new Error("No Theming Config provided");
 
-        if(manager && props.themingConfig) {
-            const result = manager.loadTheme(props.themingConfig, props.pool);
+        if(manager.current && props.themingConfig && props.themingConfig.name !== theme?.name) {
+            const result = manager.current.loadTheme(props.themingConfig, props.pool);
 
             setSuppressTransitions(true);
 
-            setTheme(result);
+            setTheme(deepmerge(result));
         }
-    }, [manager, props.themingConfig]);
+    }, [manager.current, props, theme]);
 
     useEffect(() => {
         if(suppressTransitions) {
@@ -57,7 +58,7 @@ export const ThemingProvider = (props: PropsWithChildren<{
     }, [suppressTransitions]);
 
     return <>
-        <ThemingContext.Provider value={theme?.components || null}>
+        <ThemingContext.Provider value={[...(theme?.components || [])]}>
             {props.children}
         </ThemingContext.Provider>
     </>;
