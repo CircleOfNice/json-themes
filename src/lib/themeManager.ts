@@ -170,7 +170,7 @@ const resolveColorsDefinition = (str: unknown, theme: ThemingConfig, allowGradie
 // eslint-disable-next-line @typescript-eslint/ban-types
 const resolveBackdropFilterDefinition = (obj: ThemingBackdropFilterDefinition | string, theme: ThemingConfig): Object => {
     if(typeof obj === "string" && obj.startsWith("$$"))
-        return resolveBackdropFilterDefinition(resolveGlobalsVarString(obj, theme, (resolvedObject => resolvedObject)), theme);
+        return resolveBackdropFilterDefinition(resolveGlobalsVar(obj, theme, (resolvedObject => resolvedObject)), theme);
 
     return {
         "backdropFilter":                             resolveGlobalsVarString((obj as ThemingBackdropFilterDefinition).definition, theme),

@@ -36,7 +36,7 @@ export default defineConfig(() => {
 					compact: true,
 					sourcemap: false,
 					minifyInternalExports: true,
-					strict: false,
+					strict: true,
 					globals: {
 						...Object.fromEntries(
 							allExternals.map(key => {
@@ -50,7 +50,8 @@ export default defineConfig(() => {
 				}
 			},
 			commonjsOptions: {
-				sourceMap: false
+				sourceMap: false,
+				transformMixedEsModules: true
 			}
 		},
 
