@@ -8,7 +8,11 @@ const config = {
 	libName: "@circle/json-themes"
 }
 
-const allExternals = [...Object.keys((pkgJson as any).peerDependencies || {}), ...Object.keys((pkgJson as any).dependencies || {})];
+const allExternals = [
+	...Object.keys((pkgJson as any).peerDependencies || {}), 
+	...Object.keys((pkgJson as any).dependencies || {}),
+	"react/jsx-runtime"
+];
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
@@ -16,9 +20,7 @@ export default defineConfig(() => {
 
 	return {
 		plugins: [
-			react({
-				jsxRuntime: "classic"
-			})
+			react()
 		],
 		build: {
 			cssCodeSplit: false,
