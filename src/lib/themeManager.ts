@@ -21,10 +21,10 @@ import { createGlobalStyles } from "goober/global";
 const dollarVarRegex = /\$\$(?:[\w.]*\|?)/gm;
 
 const selectors = {
-    invalid:      "&:invalid,&[aria-invalid=true]",
-    checked:      "&:checked,&[aria-checked=true]",
-    pressed:      "&[aria-pressed=true]",
-    current:      "&[aria-current=true]",
+    invalid:      "&:invalid,&[aria-invalid]:not([aria-invalid=false])",
+    checked:      "&:checked,&[aria-checked]:not([aria-checked=false])",
+    pressed:      "&[aria-pressed]:not([aria-pressed=false])",
+    current:      "&[aria-current]:not([aria-current=false])",
     focus:        "&:focus,&focus-within",
     focusVisible: "&:focus-visible",
     hover:        "&:hover",
@@ -388,8 +388,8 @@ const resolveBoxDefinition = (def: string | ThemingBoxSet | undefined, theme: Th
     return null;
 };
 
-const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefinition, target: Array<any>, theme: ThemingConfig, selector?: keyof typeof selectors) => {
-    const slctr = `&${selector ? `${selector}` : ""}::${mode}`;
+const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefinition, target: Array<any>, theme: ThemingConfig) => {
+    const slctr = `&::${mode}`;
 
     return target.push({
         [slctr]: Object.fromEntries(
@@ -398,8 +398,7 @@ const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefi
                 if(key === "transitionSpeed") return (["transitionDuration", resolveGlobalsVarString(inp[key], theme)]);
 
                 return ([key, resolveGlobalsVarString(inp && inp[key], theme)]);
-            }
-            )
+            })
         )
     });
 };
@@ -409,7 +408,7 @@ const resolveBeforeAfter = (mode: "before" | "after", inp:ThemingBeforeAfterDefi
  * @returns Box Definition CSS
  */
 // eslint-disable-next-line complexity, max-statements
-const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, context?: string, selector?: keyof typeof selectors): Array<object> => {
+const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, context?: string): Array<object> => {
     const res = [];
 
     if(!boxDef) return [];
@@ -460,45 +459,45 @@ const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, co
         });
 
     if(boxDef.before)
-        resolveBeforeAfter("before", boxDef.before, res, theme, selector);
+        resolveBeforeAfter("before", boxDef.before, res, theme);
 
     if(boxDef.after)
-        resolveBeforeAfter("after", boxDef.after, res, theme, selector);
+        resolveBeforeAfter("after", boxDef.after, res, theme);
 
     if(boxDef.__hover)
-        res.splice(0, 0, { [selectors.hover]: boxDefToCssProps(boxDef.__hover, theme, context, "hover")
+        res.splice(0, 0, { [selectors.hover]: boxDefToCssProps(boxDef.__hover, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     if(boxDef.__active)
-        res.splice(0, 0, { [selectors.active]: boxDefToCssProps(boxDef.__active, theme, context, "active")
+        res.splice(0, 0, { [selectors.active]: boxDefToCssProps(boxDef.__active, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     if(boxDef.__focus)
-        res.splice(0, 0, { [selectors.focus]: boxDefToCssProps(boxDef.__focus, theme, context, "focus")
+        res.splice(0, 0, { [selectors.focus]: boxDefToCssProps(boxDef.__focus, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     if(boxDef.__focusVisible)
-        res.splice(0, 0, { [selectors.focusVisible]: boxDefToCssProps(boxDef.__focusVisible, theme, context, "focusVisible")
+        res.splice(0, 0, { [selectors.focusVisible]: boxDefToCssProps(boxDef.__focusVisible, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     if(boxDef.__checked)
-        res.splice(0, 0, { [selectors.checked]: boxDefToCssProps(boxDef.__checked, theme, context, "checked")
+        res.splice(0, 0, { [selectors.checked]: boxDefToCssProps(boxDef.__checked, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     if(boxDef.__disabled)
-        res.splice(0, 0, { [selectors.disabled]: boxDefToCssProps(boxDef.__disabled, theme, context, "disabled")
+        res.splice(0, 0, { [selectors.disabled]: boxDefToCssProps(boxDef.__disabled, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     if(boxDef.__invalid)
-        res.splice(0, 0, { [selectors.invalid]: boxDefToCssProps(boxDef.__invalid, theme, context, "invalid")
+        res.splice(0, 0, { [selectors.invalid]: boxDefToCssProps(boxDef.__invalid, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     if(boxDef.__pressed)
-        res.splice(0, 0, { [selectors.pressed]: boxDefToCssProps(boxDef.__pressed, theme, context, "pressed")
+        res.splice(0, 0, { [selectors.pressed]: boxDefToCssProps(boxDef.__pressed, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     if(boxDef.__current)
-        res.splice(0, 0, { [selectors.current]: boxDefToCssProps(boxDef.__current, theme, context, "current")
+        res.splice(0, 0, { [selectors.current]: boxDefToCssProps(boxDef.__current, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
     return [deepmerge(
