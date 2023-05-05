@@ -12,14 +12,18 @@ const allExternals = [...Object.keys((pkgJson as any).peerDependencies || {}), .
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
+	console.log(`Externals: ${allExternals.join(", ")}`)
+
 	return {
 		plugins: [
-			react()
+			react({
+				jsxRuntime: "classic"
+			})
 		],
 		build: {
 			cssCodeSplit: false,
 			emptyOutDir: true,
-			sourcemap: false,
+			sourcemap: true,
 			minify: true,
 			outDir: path.resolve(__dirname, "dist"),
 			lib: {
@@ -34,8 +38,8 @@ export default defineConfig(() => {
 				output: {
 					exports: "named",
 					compact: true,
-					sourcemap: false,
-					minifyInternalExports: true,
+					sourcemap: true,
+					minifyInternalExports: false,
 					strict: true,
 					globals: {
 						...Object.fromEntries(
@@ -51,7 +55,7 @@ export default defineConfig(() => {
 			},
 			commonjsOptions: {
 				sourceMap: false,
-				transformMixedEsModules: true
+				transformMixedEsModules: true,
 			}
 		},
 
