@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { defineConfig } from "vite";
-const path = require("path");
+import path from "path";
 import react from "@vitejs/plugin-react";
 import pkgJson from './package.json'
 

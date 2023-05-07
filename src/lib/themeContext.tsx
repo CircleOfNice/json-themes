@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, useEffect, useRef, useState } from "react";
-import { ComponentsConfig, IThemeManager, ThemeManager } from "./themeManager";
-import { ThemingConfig } from "./types";
+import { ThemeManager } from "./themeManager";
+import { ComponentsConfig, IThemeManager, ThemingConfig } from "./types";
 import { deepmerge } from "deepmerge-ts";
 
 export const ThemingContext = React.createContext<null | ComponentsConfig[]>([]);

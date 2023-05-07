@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { ThemingContext } from "./themeContext";
-import { ComponentsConfig } from "./themeManager";
+import { ComponentsConfig } from "./types";
 
 type ThemingVariant<T = object> = {
     className: string,
