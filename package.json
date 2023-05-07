@@ -78,6 +78,9 @@
     "staticPath": "src/static"
   },
   "ava": {
+    "files": [
+      "src/**/tests/**/*"
+    ],
     "extensions": {
       "ts": "module"
     },
