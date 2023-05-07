@@ -1,6 +1,6 @@
 {
   "name": "@circle/json-themes",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "A toolbox around theming for component libraries",
   "files": [
     "./dist/*"
