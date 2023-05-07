@@ -175,3 +175,35 @@ export type ThemingConfig = ThemingConfigFile;
 export type ThemeableComponentProps<T> = {
     variant?: string | null
 } & T;
+
+export type ComponentsConfig = {
+    component: string
+    variants: {
+        variant: string;
+        className: string;
+        defaultProps: object;
+        parts: {
+            [key: string]: string
+        }
+    }[]
+}
+
+export type ThemeType = {
+    name: string,
+    components: ComponentsConfig[],
+    globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
+}
+
+export type IThemeManager = {
+    readonly __lastActiveTheme: {
+        name: string,
+        components: ComponentsConfig[],
+        globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
+    } | null
+    init: (componentCreationFunction: Function) => void // eslint-disable-line @typescript-eslint/ban-types
+    loadTheme: (themeConfig: ThemingConfig, pool?: ThemingConfig[]) => {
+        components: ComponentsConfig[],
+        globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types,
+        name: string
+    } | null
+}

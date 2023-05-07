@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ThemingBackdropFilterDefinition,
+import { ComponentsConfig, IThemeManager, ThemeType, ThemingBackdropFilterDefinition,
     ThemingBeforeAfterDefinition,
     ThemingBorderDefinition,
     ThemingBorderMap,
@@ -42,8 +42,8 @@ const selectors = {
 // eslint-disable-next-line complexity
 const sortCssNestings = (a: [string, unknown], b: [string, unknown]) => {
     const order = [
-        "invalid",
         "checked",
+        "invalid",
         "pressed",
         "current",
         "focus",
@@ -68,12 +68,12 @@ const getVarName = (str: string) => str.slice(2);
  * @param {*} value optional value to search on
  * @returns resolved variable from path
  */
-const getDeepAttribute = (root: Record<string, any>, path: string[], value: any = null): any => {
-    const val = value || root;
+export const getDeepAttribute = (root: Record<string, any>, path: string[], value: any = null): any => {
+    const val = value ?? root;
 
     if(!path || path.length === 0) {
         if(typeof val === "string" && val.includes("$$"))
-            return `${value}`.replace(dollarVarRegex,
+            return `${val}`.replace(dollarVarRegex,
                 str => getDeepAttribute(root, getVarName(str.replace("|", "")).split("."))
             );
 
@@ -175,7 +175,7 @@ const resolveBackdropFilterDefinition = (obj: ThemingBackdropFilterDefinition | 
     return {
         "backdropFilter":                             resolveGlobalsVarString((obj as ThemingBackdropFilterDefinition).definition, theme),
         "@supports not (backdrop-filter: blur(1px))": {
-            background: resolveGlobalsVarString((obj as ThemingBackdropFilterDefinition).fallbackBackground, theme)
+            background: resolveColorsDefinition((obj as ThemingBackdropFilterDefinition).fallbackBackground, theme, true)
         }
     };
 };
@@ -284,7 +284,7 @@ const colorSetToCss = (colorSet: ThemingColorSet | ThemingColorSet[] | string, t
             }
         },
         set.__selection && {
-            "::selection": {
+            "&::selection": {
                 color:      resolveGlobalsVarString(set.__selection.foreground, theme),
                 background: resolveColorsDefinition(set.__selection.background, theme)
             }
@@ -500,22 +500,12 @@ const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, co
         res.splice(0, 0, { [selectors.current]: boxDefToCssProps(boxDef.__current, theme, context)
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
-    return [deepmerge(
-        ...res
-    ) as object];
-};
 
-export type ComponentsConfig = {
-    component: string
-    variants: {
-        variant: string;
-        className: string;
-        defaultProps: object;
-        parts: {
-            [key: string]: string
-        }
-    }[]
-}
+    const merged = deepmerge(...res) as object;
+    const sorted = Object.fromEntries(Object.entries(merged).sort(sortCssNestings));
+
+    return [sorted];
+};
 
 /**
  * Resolve a Component in themeConfig.components. Includes resolving default def, variants and defaultProps
@@ -524,7 +514,7 @@ export type ComponentsConfig = {
  * @param theme The theming config
  * @returns ComponentConfig
  */
-const resolveComponent = (component: string, theme: ThemingConfig): ComponentsConfig => {
+export const resolveComponent = (component: string, theme: ThemingConfig): ComponentsConfig => {
     const componentConfig = theme.components[component];
 
     if(!componentConfig)
@@ -583,20 +573,6 @@ const resolveComponent = (component: string, theme: ThemingConfig): ComponentsCo
     });
 };
 
-export type IThemeManager = {
-    readonly __lastActiveTheme: {
-        name: string,
-        components: ComponentsConfig[],
-        globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
-    } | null
-    init: (componentCreationFunction: Function) => void // eslint-disable-line @typescript-eslint/ban-types
-    loadTheme: (themeConfig: ThemingConfig, pool?: ThemingConfig[]) => {
-        components: ComponentsConfig[],
-        globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types,
-        name: string
-    } | null
-}
-
 /**
  * resolve a configuration object with inheritance
  * @param themeConfig the config
@@ -640,12 +616,6 @@ const resolveConfig = (themeConfig: ThemingConfig, themesPool: ThemingConfig[]) 
 
     return themeConfig;
 };
-
-export type ThemeType = {
-    name: string,
-    components: ComponentsConfig[],
-    globalStyles: Function // eslint-disable-line @typescript-eslint/ban-types
-}
 
 export class ThemeManager implements IThemeManager {
     __lastActiveTheme: null | ThemeType = null;
