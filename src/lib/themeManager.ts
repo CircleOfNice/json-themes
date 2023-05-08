@@ -501,6 +501,8 @@ const boxDefToCssProps = (boxDef: ThemingBoxSet | null, theme: ThemingConfig, co
             .reduce((prev, curr) => ({ ...prev, ...curr }), {}) });
 
 
+    if(res.length === 0) return [];
+
     const merged = deepmerge(...res) as object;
     const sorted = Object.fromEntries(Object.entries(merged).sort(sortCssNestings));
 
