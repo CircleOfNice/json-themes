@@ -21,10 +21,10 @@ import { createGlobalStyles } from "goober/global";
 const dollarVarRegex = /\$\$(?:[\w.]*\|?)/gm;
 
 const selectors = {
-    invalid:      "&:invalid,&[aria-invalid]:not([aria-invalid=false])",
-    checked:      "&:checked,&[aria-checked]:not([aria-checked=false])",
-    pressed:      "&[aria-pressed]:not([aria-pressed=false])",
-    current:      "&[aria-current]:not([aria-current=false])",
+    invalid:      "&:invalid,&[aria-invalid=true],&[aria-invalid=grammar],&[aria-invalid=spelling]",
+    checked:      "&:checked,&[aria-checked=true],&[aria-checked=mixed]",
+    pressed:      "&[aria-pressed=true],&[aria-pressed=mixed]",
+    current:      "&[aria-current=true],&[aria-current=page],&[aria-current=step],&[aria-current=location],&[aria-current=date],&[aria-current=time]",
     focus:        "&:focus,&focus-within",
     focusVisible: "&:focus-visible",
     hover:        "&:hover",
